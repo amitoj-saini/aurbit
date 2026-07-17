@@ -1,12 +1,16 @@
 import { StyleProp, ViewStyle, Pressable, PressableProps, StyleSheet, TextInput, TextInputProps } from "react-native";
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedView } from "../themed-view";
+import { ThemedText } from "../themed-text";
+import { ReactNode } from "react";
 
 type ButtonProps = PressableProps & {
+    children: ReactNode;
     style?: StyleProp<ViewStyle>;
 };
 
-export function Input(props: TextInputProps) {
+export function 
+Input(props: TextInputProps) {
     const theme = useTheme();
 
     const styles = StyleSheet.create({
@@ -37,7 +41,7 @@ export function Input(props: TextInputProps) {
 }
 
 
-export function Button({ style, ...props }: ButtonProps ) {
+export function Button({ children, style, ...props }: ButtonProps ) {
     const theme = useTheme();
 
     const styles = StyleSheet.create({
@@ -46,7 +50,13 @@ export function Button({ style, ...props }: ButtonProps ) {
             borderRadius: 12,
             justifyContent: 'center',
             alignItems: 'center',
-            backgroundColor: theme.accentPrimary
+            backgroundColor: theme.accentPrimary,
+            textAlign: 'center',
+        },
+        text: {
+            color: theme.textOpposite,
+            fontWeight: 400,
+            fontSize: 14
         }
     })
 
@@ -58,7 +68,9 @@ export function Button({ style, ...props }: ButtonProps ) {
             ]}
             {...props}
             >
-            
+            <ThemedText style={[styles.text]}>
+                { children }
+            </ThemedText>
         </Pressable>
     )
 }

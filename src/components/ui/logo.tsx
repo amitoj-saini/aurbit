@@ -1,6 +1,7 @@
 import { Image, Text, StyleSheet, StyleProp, TextStyle } from "react-native";
 import { ThemedText } from "../themed-text";
 import { useTheme } from "@/hooks/use-theme";
+import { Fonts } from '@/constants/theme';
 
 export default function Logo() {
     return (
@@ -17,11 +18,13 @@ export function LogoText({ style }: { style?: StyleProp<TextStyle> }) {
     const styles = StyleSheet.create({
         LogoText: {
             fontSize: 24,
-            fontWeight: "bold"
+            fontWeight: 600,
+            // use the app display/sans font so the logo text matches app typography
+            fontFamily: (Fonts as any)?.sans,
         }
     })
 
     return (
-        <ThemedText style={[style, styles.LogoText]}>aurbit<Text style={{color: theme.accentPrimary}}>′</Text></ThemedText>
+        <ThemedText style={[styles.LogoText, style]}>aurbit<Text style={{color: theme.accentPrimary}}>′</Text></ThemedText>
     )
 }

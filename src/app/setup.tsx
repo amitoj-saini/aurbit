@@ -1,12 +1,14 @@
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput } from 'react-native';
-import { useState } from 'react';
-import * as SecureStore from 'expo-secure-store';
-import { useRouter } from 'expo-router';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+
+import { Button, Input } from '@/components/ui/elements';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import * as SecureStore from 'expo-secure-store';
 import { useTheme } from '@/hooks/use-theme';
-import Logo from '@/components/ui/logo';
+import { Spacing } from '@/constants/theme';
+import { useRouter } from 'expo-router';
+import Logo, { LogoText } from '@/components/ui/logo';
+import { useState, useRef, useEffect } from 'react';
 
 
 const AURBIT_ENDPOINT_STORAGE_KEY = 'aurbit-endpoint';
@@ -26,6 +28,15 @@ export default function SetupScreen() {
     const [endpoint, setEndpoint] = useState('');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [isURLValid, setURLValid] = useState(false);
+
+    const inputRef = useRef<TextInput | null>(null);
+
+    useEffect(() => {
+        // Slight delay helps ensure focus on mount across platforms and that the keyboard appears
+        const t = setTimeout(() => inputRef.current?.focus(), 250);
+        return () => clearTimeout(t);
+    }, []);
 
     const saveEndpoint = async () => {
         const trimmedEndpoint = endpoint.trim();
@@ -56,28 +67,27 @@ export default function SetupScreen() {
 
     return (
         <ThemedView style={styles.page}>
-            <Logo/>
+            <View style={styles.logoContainer}><Logo/></View>
 
             <KeyboardAvoidingView
                 behavior={Platform.select({ ios: 'padding', android: 'height', web: 'padding' })}
                 style={styles.container}>
 
                 <ThemedText type="title" style={styles.title}>
-                    Aurbit Endpoint
+                    Welcome to <LogoText style={{fontWeight: 600, fontSize: 36}}/>
                 </ThemedText>
 
                 <ThemedText type="small" themeColor="textSecondary" style={styles.subtitle}>
                     Enter the URL for your Aurbit server so the app can connect securely.
                 </ThemedText>
 
-                <TextInput
-                    style={[styles.input, { borderColor: theme.text, color: theme.text }]}
+                <Input
                     autoCapitalize="none"
                     autoCorrect={false}
                     keyboardType="url"
                     placeholder="https://aurbit.example.com"
-                    placeholderTextColor={theme.textSecondary}
                     onChangeText={(value) => {
+                        setURLValid(isValidUrl(value));
                         setEndpoint(value);
                         if (errorMessage) {
                             setErrorMessage(null);
@@ -95,20 +105,13 @@ export default function SetupScreen() {
                         {errorMessage}
                     </ThemedText>
                 ) : null}
-
-                <Pressable
-                    style={({ pressed }) => [
-                        styles.button,
-                        { backgroundColor: pressed ? '#4b73f2' : '#3c87f7' },
-                        isSaving && styles.buttonDisabled,
-                    ]}
+                
+                <Button
+                    style={{opacity: isURLValid ? 1 : 0.3}}
                     onPress={saveEndpoint}
-                    disabled={isSaving}
-                >
-                    <ThemedText style={styles.buttonText}>
-                        {isSaving ? 'Saving…' : 'Save endpoint'}
-                    </ThemedText>
-                </Pressable>
+                    disabled={!isURLValid}>
+                    Next
+                </Button>
             </KeyboardAvoidingView>
         </ThemedView>
     );
@@ -117,19 +120,29 @@ export default function SetupScreen() {
 const styles = StyleSheet.create({
     page: {
         flex: 1,
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         padding: Spacing.four,
+        paddingTop: 100,
     },
     container: {
         width: '100%',
         maxWidth: 560,
         alignSelf: 'center',
     },
+    logoContainer: {
+        alignItems: 'center',
+        marginBottom: Spacing.four,
+    },
     title: {
         marginBottom: Spacing.two,
+        fontSize: 36,
+        textAlign: 'center',
+        fontWeight: 600
     },
     subtitle: {
         marginBottom: Spacing.four,
+        textAlign: 'center',
+        fontWeight: 400
     },
     input: {
         height: 52,
