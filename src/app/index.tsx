@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { clearSecureStore } from '@/lib/api';
 clearSecureStore();
+
 const AURBIT_ENDPOINT_STORAGE_KEY = 'aurbit-endpoint';
 
 export default function HomeScreen() {

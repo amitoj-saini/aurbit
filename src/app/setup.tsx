@@ -1,33 +1,26 @@
-import { Animated, Easing, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
-
+import { Animated, Easing, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import { Button, Input } from '@/components/ui/elements';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import * as SecureStore from 'expo-secure-store';
-import { useTheme } from '@/hooks/use-theme';
 import { Spacing } from '@/constants/theme';
-import { useRouter } from 'expo-router';
 import Logo, { LogoText } from '@/components/ui/logo';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { isValidUrl } from '@/lib/functions';
 
-const AURBIT_ENDPOINT_STORAGE_KEY = 'aurbit-endpoint';
 
 
 export default function SetupScreen() {
-    const theme = useTheme();
-    const router = useRouter();
     const [endpoint, setEndpoint] = useState('');
     const [authorization, setAuthorization] = useState('');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isURLValid, setURLValid] = useState(false);
-    const revealAnimation = useRef(new Animated.Value(0)).current;
+    const [revealAnimation] = useState(() => new Animated.Value(0));
 
     useEffect(() => {
         Animated.timing(revealAnimation, {
             toValue: isURLValid ? 1 : 0,
-            duration: 220,
+            duration: 450,
             easing: Easing.out(Easing.cubic),
             useNativeDriver: false,
         }).start();
@@ -35,9 +28,10 @@ export default function SetupScreen() {
 
     const saveAurbitData = async () => {
         /*const trimmedEndpoint = endpoint.trim();
+        const trimmedAuth = authorization.trim();
 
-        if (!trimmedEndpoint) {
-            setErrorMessage('Please enter the Aurbit endpoint URL.');
+        if (!trimmedEndpoint || !trimmedEndpoint) {
+            setErrorMessage('Please enter the aurbit endpoint URL and Auth.');
             return;
         }
 
@@ -50,6 +44,7 @@ export default function SetupScreen() {
         setErrorMessage(null);
 
         try {
+            await SecureStore.setItemAsync(AURBIT_ENDPOINT_STORAGE_KEY, trimmedEndpoint);
             await SecureStore.setItemAsync(AURBIT_ENDPOINT_STORAGE_KEY, trimmedEndpoint);
             router.replace('/');
         } catch (error) {
@@ -98,8 +93,27 @@ export default function SetupScreen() {
                     returnKeyType="done"
                 />
  
-                {isURLValid && (
-                    <>
+                <Animated.View
+                    pointerEvents={isURLValid ? 'auto' : 'none'}
+                    style={[
+                        styles.tokenRevealContainer,
+                        {
+                            maxHeight: revealAnimation.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [0, 84],
+                            }),
+                            opacity: revealAnimation,
+                            transform: [
+                                {
+                                    translateY: revealAnimation.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: [-8, 0],
+                                    }),
+                                },
+                            ],
+                        },
+                    ]}>
+                    <View style={styles.tokenContent}>
                         <ThemedText type="small" themeColor="textSecondary" style={styles.inputLabel}>
                             Bearer token
                         </ThemedText>
@@ -108,14 +122,15 @@ export default function SetupScreen() {
                             autoCapitalize="none"
                             autoCorrect={false}
                             keyboardType="url"
-                            placeholder="bearer token"
+                            placeholder="Bearer token"
                             value={authorization}
+                            onChangeText={setAuthorization}
                             editable={!isSaving}
                             returnKeyType="done"
                             onSubmitEditing={saveAurbitData}
                         />
-                    </>
-                )}
+                    </View>
+                </Animated.View>
 
                 {errorMessage ? (
                     <ThemedText type="small" style={styles.errorText}>
@@ -157,7 +172,7 @@ const styles = StyleSheet.create({
         fontWeight: 600
     },
     subtitle: {
-        marginBottom: Spacing.four,
+        marginBottom: Spacing.three,
         textAlign: 'center',
         fontWeight: 400
     },
@@ -183,9 +198,14 @@ const styles = StyleSheet.create({
         opacity: 0.75,
     },
     inputLabel: {
-        marginTop: 15,
+        marginTop: 5,
         fontSize: 12
-        
+    },
+    tokenRevealContainer: {
+        overflow: 'hidden',
+    },
+    tokenContent: {
+        marginTop: 6,
     },
     buttonText: {
         color: '#ffffff',
