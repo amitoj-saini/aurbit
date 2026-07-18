@@ -1,4 +1,4 @@
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Animated, Easing, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button, Input } from '@/components/ui/elements';
 import { ThemedText } from '@/components/themed-text';
@@ -9,37 +9,32 @@ import { Spacing } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import Logo, { LogoText } from '@/components/ui/logo';
 import { useState, useRef, useEffect } from 'react';
-
+import { isValidUrl } from '@/lib/functions';
 
 const AURBIT_ENDPOINT_STORAGE_KEY = 'aurbit-endpoint';
 
-function isValidUrl(value: string) {
-    try {
-        new URL(value);
-        return true;
-    } catch {
-        return false;
-    }
-}
 
 export default function SetupScreen() {
     const theme = useTheme();
     const router = useRouter();
     const [endpoint, setEndpoint] = useState('');
+    const [authorization, setAuthorization] = useState('');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isURLValid, setURLValid] = useState(false);
-
-    const inputRef = useRef<TextInput | null>(null);
+    const revealAnimation = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        // Slight delay helps ensure focus on mount across platforms and that the keyboard appears
-        const t = setTimeout(() => inputRef.current?.focus(), 250);
-        return () => clearTimeout(t);
-    }, []);
+        Animated.timing(revealAnimation, {
+            toValue: isURLValid ? 1 : 0,
+            duration: 220,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: false,
+        }).start();
+    }, [isURLValid, revealAnimation]);
 
-    const saveEndpoint = async () => {
-        const trimmedEndpoint = endpoint.trim();
+    const saveAurbitData = async () => {
+        /*const trimmedEndpoint = endpoint.trim();
 
         if (!trimmedEndpoint) {
             setErrorMessage('Please enter the Aurbit endpoint URL.');
@@ -62,7 +57,7 @@ export default function SetupScreen() {
             setErrorMessage('Unable to save settings. Please try again.');
         } finally {
             setIsSaving(false);
-        }
+        }*/
     };
 
     return (
@@ -78,10 +73,14 @@ export default function SetupScreen() {
                 </ThemedText>
 
                 <ThemedText type="small" themeColor="textSecondary" style={styles.subtitle}>
-                    Enter the URL for your Aurbit server so the app can connect securely.
+                    Enter your aurbit′ server URL and authentication details so the app can establish a secure connection.
                 </ThemedText>
-
+ 
+                <ThemedText type="small" themeColor="textSecondary" style={styles.inputLabel}>
+                    Aurbit endpoint URL
+                </ThemedText>
                 <Input
+                    style={{marginTop: 4}}
                     autoCapitalize="none"
                     autoCorrect={false}
                     keyboardType="url"
@@ -97,8 +96,26 @@ export default function SetupScreen() {
                     editable={!isSaving}
                     autoFocus
                     returnKeyType="done"
-                    onSubmitEditing={saveEndpoint}
                 />
+ 
+                {isURLValid && (
+                    <>
+                        <ThemedText type="small" themeColor="textSecondary" style={styles.inputLabel}>
+                            Bearer token
+                        </ThemedText>
+                        <Input
+                            style={{marginTop: 4}}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            keyboardType="url"
+                            placeholder="bearer token"
+                            value={authorization}
+                            editable={!isSaving}
+                            returnKeyType="done"
+                            onSubmitEditing={saveAurbitData}
+                        />
+                    </>
+                )}
 
                 {errorMessage ? (
                     <ThemedText type="small" style={styles.errorText}>
@@ -107,8 +124,8 @@ export default function SetupScreen() {
                 ) : null}
                 
                 <Button
-                    style={{opacity: isURLValid ? 1 : 0.3}}
-                    onPress={saveEndpoint}
+                    style={{marginTop: 20, opacity: isURLValid ? 1 : 0.3}}
+                    onPress={saveAurbitData}
                     disabled={!isURLValid}>
                     Next
                 </Button>
@@ -164,6 +181,11 @@ const styles = StyleSheet.create({
     },
     buttonDisabled: {
         opacity: 0.75,
+    },
+    inputLabel: {
+        marginTop: 15,
+        fontSize: 12
+        
     },
     buttonText: {
         color: '#ffffff',

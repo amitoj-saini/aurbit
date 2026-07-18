@@ -10,14 +10,13 @@ type ButtonProps = PressableProps & {
 };
 
 export function 
-Input(props: TextInputProps) {
+Input({style, ...props}: TextInputProps) {
     const theme = useTheme();
 
     const styles = StyleSheet.create({
         input: {
             width: "100%",
             height: 36,
-            marginVertical: 20,
             borderStyle: "solid",
             borderWidth: 0.5,
             borderColor: theme.textSecondary,
@@ -30,7 +29,7 @@ Input(props: TextInputProps) {
     return (
         <ThemedView style={{marginBottom: 0}}>
             <TextInput
-                style={[styles.input, { borderColor: theme.text, color: theme.text }]}
+                style={[styles.input, { borderColor: theme.text, color: theme.text }, style]}
                 autoCapitalize="none"
                 autoCorrect={false}                
                 placeholderTextColor={theme.textSecondary}
