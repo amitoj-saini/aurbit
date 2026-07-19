@@ -59,6 +59,8 @@ export function Button({ children, style, ...props }: ButtonProps ) {
         }
     })
 
+    const isString = typeof children === 'string';
+
     return (
         <Pressable
             style={[
@@ -67,9 +69,13 @@ export function Button({ children, style, ...props }: ButtonProps ) {
             ]}
             {...props}
             >
-            <ThemedText style={[styles.text]}>
-                { children }
-            </ThemedText>
+            {isString ? (
+                <ThemedText style={[styles.text]}>
+                    { children }
+                </ThemedText>
+            ) : (
+                children
+            )}
         </Pressable>
     )
 }

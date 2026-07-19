@@ -2,34 +2,30 @@ import { ActivityIndicator, StyleSheet } from 'react-native';
 import { useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
-
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { clearSecureStore } from '@/lib/api';
-clearSecureStore();
-
-const AURBIT_ENDPOINT_STORAGE_KEY = 'aurbit-endpoint';
+import { appStateApi } from '@/lib/api';
 
 export default function HomeScreen() {
     const [isCheckingEndpoint, setIsCheckingEndpoint] = useState(true);
 
     useEffect(() => {
-        async function checkAurbitEndpoint() {
-            try {
-                const endpoint = await SecureStore.getItemAsync(AURBIT_ENDPOINT_STORAGE_KEY);
-                
-                // run setup
-                if (!endpoint) {
-                    router.replace('/setup');
-                }
-            } catch (error) {
-                console.error('Failed to read Aurbit endpoint from secure storage', error);
-            } finally {
-                setIsCheckingEndpoint(false);
+        async function aurbitPathIdentifier() {
+            setIsCheckingEndpoint(true)
+            let response = await appStateApi.getAppState();
+            console.log(response.err)
+            if (response.err) router.replace('/setup');
+
+            else if (response.data?.authenticated && !response.data?.loggedin) {
+                //router.replace('/login');
+            } else if (response.data?.loggedin) {
+                //router.replace('/login');
             }
+
+            setIsCheckingEndpoint(false);
         }
 
-        void checkAurbitEndpoint();
+        void aurbitPathIdentifier();
     }, []);
 
     if (isCheckingEndpoint) {

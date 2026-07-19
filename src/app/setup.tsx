@@ -5,8 +5,11 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import Logo, { LogoText } from '@/components/ui/logo';
 import { useState, useEffect } from 'react';
+import { appStateApi } from '@/lib/api';
 import { isValidUrl } from '@/lib/functions';
-
+import { storeAurbitConnectionDetails, deleteAurbitConnectionDetails } from '@/lib/storage';
+import { router } from 'expo-router';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 
 export default function SetupScreen() {
@@ -27,7 +30,7 @@ export default function SetupScreen() {
     }, [isURLValid, revealAnimation]);
 
     const saveAurbitData = async () => {
-        /*const trimmedEndpoint = endpoint.trim();
+        const trimmedEndpoint = endpoint.trim();
         const trimmedAuth = authorization.trim();
 
         if (!trimmedEndpoint || !trimmedEndpoint) {
@@ -44,15 +47,25 @@ export default function SetupScreen() {
         setErrorMessage(null);
 
         try {
-            await SecureStore.setItemAsync(AURBIT_ENDPOINT_STORAGE_KEY, trimmedEndpoint);
-            await SecureStore.setItemAsync(AURBIT_ENDPOINT_STORAGE_KEY, trimmedEndpoint);
-            router.replace('/');
+            await storeAurbitConnectionDetails(trimmedEndpoint, trimmedAuth);
+            const response = await appStateApi.getAppState();
+
+            if (response.err) {
+                console.error('Failed to get app state:', response.err);
+                setErrorMessage('Unable to connect to server. Please check your endpoint.');
+                await deleteAurbitConnectionDetails();
+            } else {
+                if (response.data?.authenticated) {
+                    router.replace('/');
+                }
+                    
+            }
         } catch (error) {
             console.error('Failed to save Aurbit endpoint to secure storage', error);
             setErrorMessage('Unable to save settings. Please try again.');
         } finally {
             setIsSaving(false);
-        }*/
+        }
     };
 
     return (
@@ -119,6 +132,7 @@ export default function SetupScreen() {
                         </ThemedText>
                         <Input
                             style={{marginTop: 4}}
+                            secureTextEntry={true}
                             autoCapitalize="none"
                             autoCorrect={false}
                             keyboardType="url"
@@ -141,8 +155,8 @@ export default function SetupScreen() {
                 <Button
                     style={{marginTop: 20, opacity: isURLValid ? 1 : 0.3}}
                     onPress={saveAurbitData}
-                    disabled={!isURLValid}>
-                    Next
+                    disabled={!isURLValid || isSaving}>
+                    {isSaving ? <LoadingSpinner size={18} /> : 'Next'}
                 </Button>
             </KeyboardAvoidingView>
         </ThemedView>
