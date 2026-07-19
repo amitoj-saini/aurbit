@@ -1,6 +1,5 @@
 import { ActivityIndicator, StyleSheet } from 'react-native';
 import { useEffect, useState } from 'react';
-import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
