@@ -14,7 +14,9 @@ export default function HomeScreen() {
             let response = await appStateApi.getAppState();
             console.log(response.err)
             if (response.err) router.replace('/setup');
-
+            else if (!response.data?.initialized) {
+                router.replace('/initialize');
+            }
             else if (response.data?.authenticated && !response.data?.loggedin) {
                 //router.replace('/login');
             } else if (response.data?.loggedin) {

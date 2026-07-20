@@ -2,14 +2,13 @@ import { Stack } from 'expo-router';
 
 export default function Layout() {
   return (
-    <Stack>
-      <Stack.Screen
-        name="setup"
-        options={{
-          headerBackVisible: false,
-          headerShown: false,
-        }}
-      />
+    <Stack
+      screenOptions={{
+        headerBackVisible: false,
+        headerShown: false,
+      }}>
+      <Stack.Screen name="setup" />
+      <Stack.Screen name="initialize" />
     </Stack>
   );
 }
