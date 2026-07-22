@@ -1,4 +1,4 @@
-import { fetchAurbitConnectionDetails } from "./storage";
+import { fetchAurbitAccessToken, fetchAurbitConnectionDetails } from "./storage";
 
 type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
@@ -22,6 +22,12 @@ type RequestOptions<TBody = unknown> = {
     body?: TBody;
     headers?: Record<string, string>;
     params?: Record<string, string | number | boolean | undefined>;
+};
+
+type ApiResult<TData = unknown> = TData & {
+    action: string;
+    message: string;
+    code: number;
 };
 
 type ApiEnvelope<TData = unknown> = {
@@ -50,11 +56,17 @@ function buildUrl(path: string, params?: Record<string, string | number | boolea
 export async function request<TData = unknown>(path: string, options: RequestOptions = {}): Promise<ApiResponse<TData>> {
     try {
         const connectionDetails = await fetchAurbitConnectionDetails();
+        const userAccessToken = await fetchAurbitAccessToken();
+
         const headers = {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${connectionDetails.authToken}`,
+            'Cookie': '',
             ...(options.headers ?? {}),
         };
+
+        if (userAccessToken)
+            headers['Cookie'] = `session=${userAccessToken}`;
 
         const url = new URL(buildUrl(path, options.params), `${connectionDetails.endpoint}/`);
 
@@ -104,12 +116,12 @@ export const appStateApi = {
 
 export const usersApi = {
     register: (payload: { displayName: string; email: string; access?: number; password?: string }) =>
-        request<{ access_token: string }>('/users/register', {
+        request<ApiResult<{ access_token: string }>>('/users/register', {
             method: 'POST',
             body: payload,
         }),
     login: (payload: { email: string; password: string }) =>
-        request<{ access_token: string }>('/users/login', {
+        request<ApiResult<{ access_token: string }>>('/users/login', {
             method: 'POST',
             body: payload,
         }),

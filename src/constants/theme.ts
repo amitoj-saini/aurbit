@@ -18,6 +18,8 @@ export const Colors = {
     accentPrimary: '#00b6fe',
     accentSecondary: '#36d6fd',
     accentTertiary: '#1854fc',
+    success: '#18ca00',
+    fail: '#db1c1c'
   },
   dark: {
     text: '#F8FAFC',
@@ -29,6 +31,8 @@ export const Colors = {
     accentPrimary: '#00b6fe',
     accentSecondary: '#36d6fd',
     accentTertiary: '#1854fc',
+    success: '#18ca00',
+    fail: '#db1c1c'
   },
 } as const;
 
