@@ -12,6 +12,7 @@ export const Colors = {
     text: '#0F172A',
     textOpposite: '#F8FAFC',
     background: '#F8FAFC',
+    backgroundSecondary: '#f1f4fa',
     backgroundElement: '#E6F8FF',
     backgroundSelected: '#BFEFFF',
     textSecondary: '#4B5563',
@@ -19,12 +20,15 @@ export const Colors = {
     accentSecondary: '#36d6fd',
     accentTertiary: '#1854fc',
     success: '#18ca00',
-    fail: '#db1c1c'
+    fail: '#db1c1c',
+
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
   },
   dark: {
     text: '#F8FAFC',
     textOpposite: '#020617',
     background: '#020617',
+    backgroundSecondary: '#06091b',
     backgroundElement: '#0F172A',
     backgroundSelected: '#1E3A8A',
     textSecondary: '#94A3B8',
@@ -32,7 +36,9 @@ export const Colors = {
     accentSecondary: '#36d6fd',
     accentTertiary: '#1854fc',
     success: '#18ca00',
-    fail: '#db1c1c'
+    fail: '#db1c1c',
+
+    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4)'
   },
 } as const;
 

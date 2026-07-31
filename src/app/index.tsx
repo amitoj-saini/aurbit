@@ -21,7 +21,7 @@ export default function HomeScreen() {
             else if (response.data.authenticated && !response.data.loggedin) {
                 //router.replace('/login');
             } else if (response.data.loggedin) {
-                //router.replace('/login');
+                router.replace('/app');
             }
 
             setIsCheckingEndpoint(false);

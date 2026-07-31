@@ -8,6 +8,7 @@ export default function Layout() {
         headerShown: false,
       }}>
       <Stack.Screen name="setup" />
+      <Stack.Screen name="app" />
       <Stack.Screen name="initialize" />
     </Stack>
   );
