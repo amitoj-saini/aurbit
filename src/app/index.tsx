@@ -1,17 +1,13 @@
-import { ActivityIndicator, StyleSheet } from 'react-native';
-import { useEffect, useState } from 'react';
+import { StyleSheet } from 'react-native';
+import { useEffect } from 'react';
 import { router } from 'expo-router';
-import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { appStateApi } from '@/lib/api';
+import { LogoAnimation } from '@/components/ui/logo';
 
 export default function HomeScreen() {
-    const [isCheckingEndpoint, setIsCheckingEndpoint] = useState(true);
-
     useEffect(() => {
         async function aurbitPathIdentifier() {
-            
-            setIsCheckingEndpoint(true)
             let response = await appStateApi.getAppState();
             
             if (response.err || !response.data) return router.replace('/setup');
@@ -19,34 +15,28 @@ export default function HomeScreen() {
                 router.replace('/initialize');
             }
             else if (response.data.authenticated && !response.data.loggedin) {
-                //router.replace('/login');
             } else if (response.data.loggedin) {
-                router.replace('/app');
+                router.replace('/aurbit');
             }
 
-            setIsCheckingEndpoint(false);
         }
 
         void aurbitPathIdentifier();
     }, []);
 
-    if (isCheckingEndpoint) {
-        return (
-            <ThemedView style={styles.loadingContainer}>
-                <ActivityIndicator />
-                <ThemedText type="small">Checking settings…</ThemedText>
-            </ThemedView>
-        );
-    }
-
-    return <ThemedText>Hello world</ThemedText>;
+    return (
+        <ThemedView style={styles.loadingContainer}>
+            <LogoAnimation width={100} height={100}></LogoAnimation>
+        </ThemedView>
+    );
 }
 
 const styles = StyleSheet.create({
     loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 24,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100%",
+        width: "100%"
     },
 });

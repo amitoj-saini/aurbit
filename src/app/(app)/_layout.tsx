@@ -6,12 +6,10 @@ export default function Layout() {
       screenOptions={{
         headerBackVisible: false,
         headerShown: false,
-        animation: "fade"
+        animation: "none"
       }}>
-      <Stack.Screen name="index"/>
-      <Stack.Screen name="setup"/>
-      <Stack.Screen name="initialize"/>
-      <Stack.Screen name="(app)" />
+      <Stack.Screen name="aurbit" />
+      <Stack.Screen name="settings" />
     </Stack>
     
   );

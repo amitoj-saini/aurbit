@@ -3,20 +3,20 @@ import { ThemedText } from "../themed-text";
 import { useTheme } from "@/hooks/use-theme";
 import { Fonts } from '@/constants/theme';
 
-export default function Logo() {
+export default function Logo({ width=120, height=120 }) {
     return (
         <Image
             source={require("../../../assets/logo/aurbit.png")}
-            style={{ width: 120, height: 120 }}
+            style={{ width: width, height: height }}
         />
     );
 }
 
-export function LogoAnimation() {
+export function LogoAnimation({width=120, height=120}) {
     return (
         <Image
             source={require("../../../assets/logo/animation.gif")}
-            style={{ width: 120, height: 120 }}
+            style={{ width: width, height: height }}
         />
     );
 }

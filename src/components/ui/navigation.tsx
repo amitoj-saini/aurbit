@@ -1,38 +1,40 @@
+
+import { StyleSheet, StyleProp, ViewStyle, Pressable } from 'react-native';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedView } from '../themed-view';
-import { StyleSheet } from 'react-native';
-import { Map, Settings } from 'lucide-react-native';
-import { ReactNode } from "react"
-import { ThemedText } from "../themed-text";
+import { Settings } from 'lucide-react-native';
+import { ReactNode, useState } from "react"
+import { ExternalPathString, RelativePathString, router } from 'expo-router';
+import Logo from './logo';
 
 type NavigationItemProps = {
-    children: ReactNode
+    style?: StyleProp<ViewStyle>;
+    children: ReactNode,
+    onPress?: () => void
 }
 
-function NavigationItem({ children }: NavigationItemProps) {
-    const theme = useTheme();
-
+function NavigationItem({ style, children, onPress }: NavigationItemProps) {
     const styles = StyleSheet.create({
         navItem: {
             borderRadius: 50,
-            padding: 10,
-            width: 85,
+            width: 75,
             height: "100%",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
             marginVertical: 2,
-            backgroundColor: theme.backgroundSecondary
+            backgroundColor: "transparent",
         }
     })
 
     return (
-        <ThemedView style={styles.navItem}>{children}</ThemedView>
+        <Pressable onPress={onPress} style={[styles.navItem, style]}>{children}</Pressable>
     )
 }
 
-export default function Navigation() {
+export default function Navigation({selected = "aurbit"}) {
     const theme = useTheme();
+    const [selectedNavigationItem] = useState(selected);
 
     const styles = StyleSheet.create({
         centerNavigation: {
@@ -60,6 +62,11 @@ export default function Navigation() {
         navigationText: {
             fontSize: 11,
             fontWeight: 400
+        },
+
+        selected: {
+            backgroundColor: theme.background,
+            boxShadow: theme.boxShadow
         }
     })
 
@@ -67,14 +74,14 @@ export default function Navigation() {
         <ThemedView style={styles.centerNavigation}>
             <ThemedView style={styles.navigationContainer}>
                 
-                <NavigationItem>
-                    <Map size={16}/>
-                    <ThemedText style={styles.navigationText}>Map</ThemedText>
+                <NavigationItem onPress={() => { if (selectedNavigationItem !== "aurbit") router.push("/aurbit"); }} style={(selectedNavigationItem === "aurbit") ? styles.selected : {}}>
+                    <Logo width={36} height={36}/>
+                    
                 </NavigationItem>
 
-                <NavigationItem>
-                    <Settings size={16}/>
-                    <ThemedText style={styles.navigationText}>Settings</ThemedText>
+                <NavigationItem onPress={() => { if (selectedNavigationItem !== "settings") router.push("/settings"); }} style={(selectedNavigationItem === "settings") ? styles.selected : {}}>
+                    <Settings size={18}/>
+                    
                 </NavigationItem>
             </ThemedView>
         </ThemedView>
