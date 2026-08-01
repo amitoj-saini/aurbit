@@ -10,6 +10,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { usersApi } from '@/lib/api';
 import { storeAurbitAccessToken } from '@/lib/storage';
 import { router } from 'expo-router';
+import appLog from '@/lib/logger';
 
 export default function InitializeScreen() {
     const theme = useTheme();
@@ -38,10 +39,11 @@ export default function InitializeScreen() {
         });
         console.log(response.data?.access_token)
         if (response.data?.access_token){
+            appLog("auth", "Logged in user")
             storeAurbitAccessToken(response.data?.access_token);
             router.replace('/');
         } else {
-            console.error('Registration error:', response.err);
+            appLog("auth", "Initialize failed", {"error": response.err})
             setErrorMessage("Something went wrong");
             return;
         } 

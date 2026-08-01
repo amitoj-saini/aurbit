@@ -125,6 +125,12 @@ export const usersApi = {
             method: 'POST',
             body: payload,
         }),
+
+    userStatus: (payload: { email: string; }) =>
+        request<ApiResult<{ initialized: boolean }>>('/users/user-status', {
+            method: 'POST',
+            body: payload,
+        }),
 };
 
 export const locationApi = {

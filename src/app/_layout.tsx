@@ -17,6 +17,7 @@ export default function Layout() {
             <Stack.Screen name="index"/>
             <Stack.Screen name="setup"/>
             <Stack.Screen name="initialize"/>
+            <Stack.Screen name="login"/>
             <Stack.Screen name="(app)" />
         </Stack>
         

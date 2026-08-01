@@ -16,6 +16,7 @@ export default function HomeScreen() {
                 router.replace('/initialize');
             }
             else if (response.data.authenticated && !response.data.loggedin) {
+                router.replace('/login');
             } else if (response.data.loggedin) {
                 router.replace('/aurbit');
             }
