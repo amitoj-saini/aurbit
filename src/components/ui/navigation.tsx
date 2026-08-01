@@ -44,6 +44,7 @@ export default function Navigation({selected = "aurbit"}) {
             alignItems: "center",
             position: "absolute",
             bottom: 50,
+            backgroundColor: "transparent"
         },
 
         navigationContainer: {
@@ -52,7 +53,7 @@ export default function Navigation({selected = "aurbit"}) {
             borderRadius: 50,
             padding: 7,
             boxShadow: theme.boxShadow,
-            backgroundColor: theme.backgroundSecondary,
+            backgroundColor: `${theme.backgroundSecondary}E6`,
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
@@ -65,7 +66,7 @@ export default function Navigation({selected = "aurbit"}) {
         },
 
         selected: {
-            backgroundColor: theme.background,
+            backgroundColor: `${theme.backgroundTertiary}`,
             boxShadow: theme.boxShadow
         }
     })
@@ -80,7 +81,7 @@ export default function Navigation({selected = "aurbit"}) {
                 </NavigationItem>
 
                 <NavigationItem onPress={() => { if (selectedNavigationItem !== "settings") router.push("/settings"); }} style={(selectedNavigationItem === "settings") ? styles.selected : {}}>
-                    <Settings size={18}/>
+                    <Settings color={theme.text} size={18}/>
                     
                 </NavigationItem>
             </ThemedView>
