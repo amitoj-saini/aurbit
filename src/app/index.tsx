@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { appStateApi } from '@/lib/api';
 import { LogoAnimation } from '@/components/ui/logo';
+import Loader from '@/components/ui/loader';
 
 export default function HomeScreen() {
     useEffect(() => {
@@ -25,18 +26,6 @@ export default function HomeScreen() {
     }, []);
 
     return (
-        <ThemedView style={styles.loadingContainer}>
-            <LogoAnimation width={100} height={100}></LogoAnimation>
-        </ThemedView>
+        <Loader></Loader>
     );
 }
-
-const styles = StyleSheet.create({
-    loadingContainer: {
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100%",
-        width: "100%"
-    },
-});

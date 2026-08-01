@@ -4,25 +4,27 @@
     "slug": "aurbit",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/favicon.svg",
+    "icon": "./assets/logo/aurbit.png",
     "scheme": "aurbit",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/favicon.svg"
+      "icon": "./assets/logo/aurbit.png",
+      "bundleIdentifier": "com.anonymous.aurbit"
     },
     "android": {
-      "icon": "./assets/favicon.svg",
+      "icon": "./assets/logo/aurbit.png",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.aurbit"
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/favicon.svg"
+      "favicon": "./assests/images/aurbit.png"
     },
     "plugins": [
       "expo-router",

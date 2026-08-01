@@ -128,6 +128,11 @@ export const usersApi = {
 };
 
 export const locationApi = {
+    fetch: () =>
+        request<{users: [{ me: boolean, userid: number, user: string; timestamp: string; longitude: number, latitude: number, speed: number }]}>('/location/', {
+            method: 'GET', 
+        }),
+
     update: (payload: { longitude: number; latitude: number; speed?: number | null }) =>
         request('/location/update', {
             method: 'POST',
