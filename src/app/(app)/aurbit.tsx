@@ -15,20 +15,33 @@ export default function App() {
     const [users, setUsers] = useState<UserLocation[]>([]);
 
     useEffect(() => {
-        async function aurbitFetchLocations() {
+        let connection: { close: () => void } | null = null;
+
+        async function aurbitConnectLocations() {
             setIsLoading(true);
 
-            let response = await locationApi.fetch();
-            appLog("location", "Location fetch response", response.err || response.data);
-
-            if (!response.err && response.data) {
-                setUsers(response.data.users);
+            try {
+                connection = await locationApi.stream(
+                    (users: UserLocation[]) => {
+                        setUsers(users);
+                        setIsLoading(false);
+                    },
+                    (error: Error) => {
+                        appLog("location", "Location websocket error", error.message);
+                        setIsLoading(false);
+                    }
+                );
+            } catch (error) {
+                appLog("location", "Location websocket failed to connect", error instanceof Error ? error.message : String(error));
+                setIsLoading(false);
             }
-
-            setIsLoading(false);
         }
 
-        void aurbitFetchLocations();
+        void aurbitConnectLocations();
+
+        return () => {
+            connection?.close();
+        };
     }, []);
 
     // if is loading

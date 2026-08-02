@@ -1,4 +1,4 @@
-import { fetchAurbitAccessToken, fetchAurbitConnectionDetails } from "./storage";
+import { fetchAurbitAccessToken, fetchAurbitConnectionDetails } from './storage';
 
 type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
@@ -51,6 +51,20 @@ export type UserLocation = {
     speed: number;
 };
 
+type RawUserLocation = {
+    me: boolean;
+    userid: number;
+    user: string;
+    timestamp: string;
+    longitude: number;
+    latitude: number;
+    speed: number;
+};
+
+type LocationStream = {
+    close: () => void;
+};
+
 function buildUrl(path: string, params?: Record<string, string | number | boolean | undefined>) {
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     const query = params
@@ -63,22 +77,99 @@ function buildUrl(path: string, params?: Record<string, string | number | boolea
     return `${normalizedPath}${query ? `?${query}` : ''}`;
 }
 
+function buildWebSocketUrl(path: string, endpoint: string, params?: Record<string, string>) {
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    const url = new URL(buildUrl(normalizedPath), `${endpoint.replace(/\/$/, '')}/`);
+    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+
+    if (params) {
+        Object.entries(params).forEach(([key, value]) => {
+            url.searchParams.set(key, value);
+        });
+    }
+
+    return url.toString();
+}
+
+async function openWebSocketStream(
+    path: string,
+    onUpdate: (users: UserLocation[]) => void,
+    onError?: (error: Error) => void,
+): Promise<LocationStream> {
+    const connectionDetails = await fetchAurbitConnectionDetails();
+    const userAccessToken = await fetchAurbitAccessToken();
+
+    const websocketHeaders: Record<string, string> = {
+        Authorization: `Bearer ${connectionDetails.authToken}`,
+    };
+
+    if (userAccessToken) {
+        websocketHeaders.Cookie = `session=${userAccessToken}`;
+    }
+
+    const socketConstructor = WebSocket as unknown as new (
+        url: string,
+        protocols?: string | string[],
+        options?: { headers?: Record<string, string> },
+    ) => WebSocket;
+
+    const socket = new socketConstructor(buildWebSocketUrl(path, connectionDetails.endpoint), undefined, {
+        headers: websocketHeaders,
+    });
+
+    socket.onmessage = (event: MessageEvent) => {
+        try {
+            const payload = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+            const users = Array.isArray(payload?.result?.data?.users)
+                ? payload.result.data.users.map((user: RawUserLocation) => ({
+                      ...user,
+                      timestamp: new Date(user.timestamp),
+                  }))
+                : null;
+
+            if (users) {
+                onUpdate(users);
+                return;
+            }
+
+            const message = payload?.result?.message ?? 'Invalid location data received';
+            onError?.(new Error(String(message)));
+        } catch (error) {
+            onError?.(error instanceof Error ? error : new Error('Malformed websocket message'));
+        }
+    };
+
+    socket.onerror = () => {
+        onError?.(new Error('WebSocket error while connecting to Aurbit.'));
+    };
+
+    socket.onclose = (event: { wasClean: boolean; code: number }) => {
+        if (!event.wasClean) {
+            onError?.(new Error(`WebSocket closed unexpectedly (${event.code}).`));
+        }
+    };
+
+    return {
+        close: () => socket.close(),
+    };
+}
+
 export async function request<TData = unknown>(path: string, options: RequestOptions = {}): Promise<ApiResponse<TData>> {
     try {
         const connectionDetails = await fetchAurbitConnectionDetails();
         const userAccessToken = await fetchAurbitAccessToken();
 
-        const headers = {
+        const headers: Record<string, string> = {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${connectionDetails.authToken}`,
-            'Cookie': '',
+            Authorization: `Bearer ${connectionDetails.authToken}`,
             ...(options.headers ?? {}),
         };
 
-        if (userAccessToken)
+        if (userAccessToken) {
             headers['Cookie'] = `session=${userAccessToken}`;
+        }
 
-        const url = new URL(buildUrl(path, options.params), `${connectionDetails.endpoint}/`);
+        const url = new URL(buildUrl(path, options.params), `${connectionDetails.endpoint.replace(/\/$/, '')}/`);
 
         const response = await fetch(url.toString(), {
             method: options.method ?? 'GET',
@@ -88,7 +179,7 @@ export async function request<TData = unknown>(path: string, options: RequestOpt
 
         const contentType = response.headers.get('content-type') ?? '';
         let payload: ApiEnvelope<TData>;
-        
+
         try {
             payload = contentType.includes('application/json')
                 ? ((await response.json()) as ApiEnvelope<TData>)
@@ -136,7 +227,7 @@ export const usersApi = {
             body: payload,
         }),
 
-    userStatus: (payload: { email: string; }) =>
+    userStatus: (payload: { email: string }) =>
         request<ApiResult<{ initialized: boolean }>>('/users/user-status', {
             method: 'POST',
             body: payload,
@@ -144,21 +235,27 @@ export const usersApi = {
 };
 
 export const locationApi = {
-    fetch: async () => {
-        const response = await request<{ users: { me: boolean; userid: number; user: string; timestamp: string; longitude: number; latitude: number; speed: number }[] }>('/location/', {
-            method: 'GET',
+    fetch: async (): Promise<ApiResponse<{ users: UserLocation[] }>> => {
+        return new Promise<ApiResponse<{ users: UserLocation[] }>>((resolve) => {
+            openWebSocketStream(
+                '/location/',
+                (users) => {
+                    resolve(new ApiResponse<{ users: UserLocation[] }>({ users }, null));
+                },
+                (error) => {
+                    resolve(new ApiResponse<{ users: UserLocation[] }>(null, error));
+                },
+            ).catch((error) => {
+                resolve(new ApiResponse<{ users: UserLocation[] }>(null, error instanceof Error ? error : new Error(String(error))));
+            });
         });
+    },
 
-        if (response.isError() || !response.data) {
-            return response as unknown as ApiResponse<{ users: UserLocation[] }>;
-        }
-
-        const converted = response.data.users.map((u) => ({
-            ...u,
-            timestamp: new Date(u.timestamp),
-        }));
-
-        return new ApiResponse<{ users: UserLocation[] }>( { users: converted }, null );
+    stream: async (
+        onUpdate: (users: UserLocation[]) => void,
+        onError?: (error: Error) => void,
+    ): Promise<LocationStream> => {
+        return openWebSocketStream('/location/', onUpdate, onError);
     },
 
     update: (payload: { longitude: number; latitude: number; speed?: number | null }) =>
