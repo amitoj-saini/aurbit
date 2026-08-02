@@ -7,6 +7,7 @@ const LOCATION_TASK = "background-location-update";
 const MIN_BACKGROUND_UPDATE_INTERVAL_MS = 5 * 60 * 60 * 1000;
 
 async function updateLocation(location: Location.LocationObject) {
+    console.log(location.coords)
     try {
         const response = await locationApi.update({
             longitude: location.coords.longitude,
@@ -70,7 +71,7 @@ export async function initializeLocationUpdater() {
 
 
         // always update when you open up the app
-        let currentLocation = await Location.getLastKnownPositionAsync();
+        let currentLocation = await Location.getCurrentPositionAsync();
 
         if (!currentLocation) 
             currentLocation = await Location.getCurrentPositionAsync({accuracy: Location.Accuracy.Balanced});

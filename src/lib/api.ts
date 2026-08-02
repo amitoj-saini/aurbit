@@ -41,6 +41,16 @@ type ApiEnvelope<TData = unknown> = {
     [key: string]: unknown;
 };
 
+export type UserLocation = {
+    me: boolean;
+    userid: number;
+    user: string;
+    timestamp: Date;
+    longitude: number;
+    latitude: number;
+    speed: number;
+};
+
 function buildUrl(path: string, params?: Record<string, string | number | boolean | undefined>) {
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     const query = params
@@ -134,10 +144,22 @@ export const usersApi = {
 };
 
 export const locationApi = {
-    fetch: () =>
-        request<{users: [{ me: boolean, userid: number, user: string; timestamp: string; longitude: number, latitude: number, speed: number }]}>('/location/', {
-            method: 'GET', 
-        }),
+    fetch: async () => {
+        const response = await request<{ users: { me: boolean; userid: number; user: string; timestamp: string; longitude: number; latitude: number; speed: number }[] }>('/location/', {
+            method: 'GET',
+        });
+
+        if (response.isError() || !response.data) {
+            return response as unknown as ApiResponse<{ users: UserLocation[] }>;
+        }
+
+        const converted = response.data.users.map((u) => ({
+            ...u,
+            timestamp: new Date(u.timestamp),
+        }));
+
+        return new ApiResponse<{ users: UserLocation[] }>( { users: converted }, null );
+    },
 
     update: (payload: { longitude: number; latitude: number; speed?: number | null }) =>
         request('/location/update', {
