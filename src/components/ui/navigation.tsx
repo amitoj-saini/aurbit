@@ -3,8 +3,8 @@ import { StyleSheet, StyleProp, ViewStyle, Pressable } from 'react-native';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedView } from '../themed-view';
 import { Settings } from 'lucide-react-native';
-import { ReactNode, useState } from "react"
-import { ExternalPathString, RelativePathString, router } from 'expo-router';
+import { ReactNode } from 'react';
+import { useRouter, useSegments } from 'expo-router';
 import Logo from './logo';
 
 type NavigationItemProps = {
@@ -25,16 +25,20 @@ function NavigationItem({ style, children, onPress }: NavigationItemProps) {
             marginVertical: 2,
             backgroundColor: "transparent",
         }
-    })
+    });
 
     return (
         <Pressable onPress={onPress} style={[styles.navItem, style]}>{children}</Pressable>
-    )
+    );
 }
 
 export default function Navigation({selected = "aurbit"}) {
     const theme = useTheme();
-    const [selectedNavigationItem] = useState(selected);
+    const router = useRouter();
+    const segments = useSegments();
+    const selectedNavigationItem = selected;
+
+    const isInSettingsChildRoute = segments[0] === "settings" && segments.length > 1;
 
     const styles = StyleSheet.create({
         centerNavigation: {
@@ -77,12 +81,18 @@ export default function Navigation({selected = "aurbit"}) {
                 
                 <NavigationItem onPress={() => { if (selectedNavigationItem !== "aurbit") router.push("/aurbit"); }} style={(selectedNavigationItem === "aurbit") ? styles.selected : {}}>
                     <Logo width={36} height={36}/>
-                    
                 </NavigationItem>
 
-                <NavigationItem onPress={() => { if (selectedNavigationItem !== "settings") router.push("/settings"); }} style={(selectedNavigationItem === "settings") ? styles.selected : {}}>
+                <NavigationItem
+                    onPress={() => {
+                        if (isInSettingsChildRoute && router.canGoBack()) {
+                            router.back();
+                        } else if (selectedNavigationItem !== "settings" || isInSettingsChildRoute) {
+                            router.push("/settings");
+                        }
+                    }}
+                    style={(selectedNavigationItem === "settings") ? styles.selected : {}}>
                     <Settings color={theme.text} size={18}/>
-                    
                 </NavigationItem>
             </ThemedView>
         </ThemedView>

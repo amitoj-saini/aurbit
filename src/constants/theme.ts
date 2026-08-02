@@ -40,7 +40,7 @@ export const Colors = {
     success: '#18ca00',
     fail: '#db1c1c',
 
-    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4)'
+    boxShadow: '0 8px 24px rgba(30, 30, 30, 0.5), 0 1px 2px rgba(30, 30, 30, 0.4)'
   },
 } as const;
 

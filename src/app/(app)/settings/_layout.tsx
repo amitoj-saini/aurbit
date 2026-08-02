@@ -6,11 +6,13 @@ export default function Layout() {
       screenOptions={{
         headerBackVisible: false,
         headerShown: false,
-        animation: "none"
+        animation: "slide_from_left"
       }}>
-      <Stack.Screen name="aurbit" />
-      <Stack.Screen name="settings" />
+      <Stack.Screen name="index" />
+      <Stack.Screen
+        name="myaccount"
+        options={{ animation: 'slide_from_right' }}
+      />
     </Stack>
-      
   );
 }

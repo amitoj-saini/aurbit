@@ -7,12 +7,42 @@ import MapView, { MapViewProps, Marker } from 'react-native-maps';
 import { locationApi } from '@/lib/api';
 import type { UserLocation } from '@/lib/api';
 import appLog from '@/lib/logger';
+import { useTheme } from '@/hooks/use-theme';
+import { ThemedText } from '@/components/themed-text';
 
 export default function App() {
     const scheme = useColorScheme();
+    const theme = useTheme();
     const mapTheme: MapViewProps["userInterfaceStyle"] = scheme === 'light' || scheme === 'dark' ? scheme : undefined;
     const [isLoading, setIsLoading] = useState(false);
     const [users, setUsers] = useState<UserLocation[]>([]);
+    
+
+    const styles = StyleSheet.create({
+        page: {
+            width: "100%",
+            height: "100%"
+        },
+        map: {
+            width: '100%',
+            height: '100%',
+        },
+        marker: {
+
+        },
+        markerContainer: {
+            width: 50,
+            height: 50,
+            borderStyle: "solid",
+            borderWidth: 1,
+            borderColor: theme.text,
+            backgroundColor: `${theme.backgroundSecondary}D9`,
+            borderRadius: 55,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center"
+        }
+    });
 
     useEffect(() => {
         let connection: { close: () => void } | null = null;
@@ -23,6 +53,7 @@ export default function App() {
             try {
                 connection = await locationApi.stream(
                     (users: UserLocation[]) => {
+                        appLog("location", "Fetched user locations", users);
                         setUsers(users);
                         setIsLoading(false);
                     },
@@ -60,6 +91,11 @@ export default function App() {
                         latitude: user.latitude
                     }}>
                         
+                        {user.image ? <></> : (
+                            <ThemedView style={styles.markerContainer}>
+                                <ThemedText>{user.user.trim().split(/\s+/).map(n => n[0]).slice(0, 2).join("").toUpperCase()}</ThemedText>
+                            </ThemedView>
+                        )}
                     </Marker>
                 ))}
             </MapView>
@@ -69,16 +105,3 @@ export default function App() {
 }
 
 
-const styles = StyleSheet.create({
-    page: {
-        width: "100%",
-        height: "100%"
-    },
-    map: {
-        width: '100%',
-        height: '100%',
-    },
-    marker: {
-
-    }
-});

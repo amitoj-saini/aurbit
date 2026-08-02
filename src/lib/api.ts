@@ -43,6 +43,7 @@ type ApiEnvelope<TData = unknown> = {
 
 export type UserLocation = {
     me: boolean;
+    image: string,
     userid: number;
     user: string;
     timestamp: Date;
@@ -99,15 +100,16 @@ async function openWebSocketStream(
     const connectionDetails = await fetchAurbitConnectionDetails();
     const userAccessToken = await fetchAurbitAccessToken();
 
-    const websocketHeaders: Record<string, string> = {
-        Authorization: `Bearer ${connectionDetails.authToken}`,
-    };
+const websocketHeaders: Record<string, string> = {};
+    if (connectionDetails?.authToken) {
+        websocketHeaders['Authorization'] = 'Bearer ' + connectionDetails.authToken;
+    }
 
     if (userAccessToken) {
         websocketHeaders.Cookie = `session=${userAccessToken}`;
     }
 
-    const socketConstructor = WebSocket as unknown as new (
+const socketConstructor = WebSocket as unknown as new (
         url: string,
         protocols?: string | string[],
         options?: { headers?: Record<string, string> },
@@ -160,17 +162,27 @@ export async function request<TData = unknown>(path: string, options: RequestOpt
         const userAccessToken = await fetchAurbitAccessToken();
 
         const headers: Record<string, string> = {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${connectionDetails.authToken}`,
             ...(options.headers ?? {}),
         };
+
+        // only set content-type when a body will be sent for non-GET requests
+        if (options.body !== undefined && (options.method ?? 'GET') !== 'GET') {
+            headers['Content-Type'] = 'application/json';
+        }
+
+        // include server auth token as Bearer when present
+        if (connectionDetails?.authToken) {
+            headers['Authorization'] = 'Bearer ' + connectionDetails.authToken;
+        }
+
+        // preserve caller overrides (if they passed Authorization or Content-Type explicitly)
+        Object.assign(headers, options.headers ?? {});
 
         if (userAccessToken) {
             headers['Cookie'] = `session=${userAccessToken}`;
         }
 
         const url = new URL(buildUrl(path, options.params), `${connectionDetails.endpoint.replace(/\/$/, '')}/`);
-
         const response = await fetch(url.toString(), {
             method: options.method ?? 'GET',
             headers,
@@ -232,6 +244,9 @@ export const usersApi = {
             method: 'POST',
             body: payload,
         }),
+
+    userDetails: () =>
+        request<ApiResult<{ email: string, displayName: string, image: string | null }>>('/users/user-details'),
 };
 
 export const locationApi = {
