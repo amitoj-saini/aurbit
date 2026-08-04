@@ -11,6 +11,7 @@ import { usersApi } from '@/lib/api';
 import { storeAurbitAccessToken } from '@/lib/storage';
 import { router } from 'expo-router';
 import appLog from '@/lib/logger';
+import { initializeLocationUpdater } from '@/services/locationUpdater';
 
 export default function InitializeScreen() {
     const theme = useTheme();
@@ -37,10 +38,10 @@ export default function InitializeScreen() {
             email: email,
             password: password,
         });
-        console.log(response.data?.access_token)
         if (response.data?.access_token){
-            appLog("auth", "Logged in user")
+            appLog("auth", "Logged in user", {"email": email})
             storeAurbitAccessToken(response.data?.access_token);
+            initializeLocationUpdater();
             router.replace('/');
         } else {
             appLog("auth", "Initialize failed", {"error": response.err})
@@ -119,7 +120,7 @@ export default function InitializeScreen() {
                     style={{marginTop: 4}}
                     autoCapitalize="none"
                     autoCorrect={false}
-                    keyboardType="url"
+                    keyboardType="default"
                     placeholder="e.g. John Doe"      
                     value={displayName}
                     onChangeText={setDisplayName}

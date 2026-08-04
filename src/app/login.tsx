@@ -11,6 +11,7 @@ import { usersApi } from '@/lib/api';
 import { storeAurbitAccessToken } from '@/lib/storage';
 import { router } from 'expo-router';
 import appLog from '@/lib/logger';
+import { initializeLocationUpdater } from '@/services/locationUpdater';
 
 // TODO: First time login/creation for users still required
 
@@ -54,7 +55,6 @@ export default function InitializeScreen() {
 
         if (response.data) {
             setUserInitialized(response.data.initialized);
-            console.log(response.data.initialized)
             setEmailFound(true);
         }
 
@@ -76,7 +76,8 @@ export default function InitializeScreen() {
 
         if (response.data?.access_token){
             storeAurbitAccessToken(response.data?.access_token);
-            appLog("auth", "Logged in user")
+            appLog("auth", "Logged in user", {"email": email})
+            initializeLocationUpdater();
             router.replace('/');
         } else {
             appLog("auth", "Login failed", {"error": response.err})

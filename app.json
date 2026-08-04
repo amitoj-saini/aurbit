@@ -1,18 +1,21 @@
 {
   "expo": {
-    "name": "aurbit",
-    "slug": "aurbit",
+    "name": "Aurbit",
+    "slug": "Aurbit",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo/aurbit.png",
+    "icon": "./assets/logo/app-logo.png",
     "scheme": "aurbit",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/logo/aurbit.png",
-      "bundleIdentifier": "com.anonymous.aurbit"
+      "icon": "./assets/logo/app-logo.png",
+      "bundleIdentifier": "com.amitoj.aurbit",
+      "infoPlist": {
+        "UIBackgroundModes": ["location"]
+      }
     },
     "android": {
-      "icon": "./assets/logo/aurbit.png",
+      "icon": "./assets/logo/app-logo.png",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

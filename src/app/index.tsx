@@ -10,7 +10,6 @@ export default function HomeScreen() {
     useEffect(() => {
         async function aurbitPathIdentifier() {
             let response = await appStateApi.getAppState();
-            
             if (response.err || !response.data) return router.replace('/setup');
             else if (!response.data.initialized && !response.data.loggedin) {
                 router.replace('/initialize');

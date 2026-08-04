@@ -18,5 +18,5 @@ export default async function appLog(logType: string, message: string, data?: an
     handle.writeBytes(bytes);
     handle.close();
 
-    console.log(message, data);
+    //console.log(message, data);
 }
