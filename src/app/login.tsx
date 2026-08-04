@@ -1,4 +1,4 @@
-import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Keyboard, Platform, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -33,7 +33,6 @@ export default function InitializeScreen() {
     const [pwdNumbers, setPwdNumbers] = useState(false);
     const [pwdCharacters, setPwdCharacters] = useState(false);
     const [pwdMixLetters, setPwdMixLetters] = useState(false);
-    const [pwdMatch, setPwdMatch] = useState(false);
     const [password, setPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -137,13 +136,14 @@ export default function InitializeScreen() {
 
     return (
         <ThemedView style={styles.page}>
-            <View style={styles.logoContainer}><LogoAnimation/></View>
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+                <View style={{ flex: 1 }}>
+                    <View style={styles.logoContainer}><LogoAnimation/></View>
 
-            <KeyboardAvoidingView
-                behavior={Platform.select({ ios: 'padding', android: 'height', web: 'padding' })}
-                style={styles.container}>
-
-                <ThemedText type="title" style={styles.title}>
+                    <KeyboardAvoidingView
+                        behavior={Platform.select({ ios: 'padding', android: 'height', web: 'padding' })}
+                        style={styles.container}>
+                        <ThemedText type="title" style={styles.title}>
                     Login into <LogoText style={{fontWeight: 600, fontSize: 36}}/>
                 </ThemedText>
 
@@ -197,7 +197,6 @@ export default function InitializeScreen() {
                                 setPwdSymbols(/[!@#$%^&*(),.?":{}|<>]/.test(value))
                                 setPwdNumbers(/[0-9]/.test(value))
                                 setPwdMixLetters(!(/(.)\1{2,}/.test(value)) && value.length > 3)
-                                setPwdMatch(false);
                             }
                             setPassword(value);
                             
@@ -233,7 +232,9 @@ export default function InitializeScreen() {
                 {errorMessage !== "" && (
                     <ThemedText style={[styles.instructionsText, styles.failText, {marginTop: 15}]}>{errorMessage}</ThemedText>
                 )}
-            </KeyboardAvoidingView>
+                    </KeyboardAvoidingView>
+                </View>
+            </TouchableWithoutFeedback>
         </ThemedView>
     );
 }

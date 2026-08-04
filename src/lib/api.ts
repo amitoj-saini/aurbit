@@ -62,6 +62,12 @@ type RawUserLocation = {
     speed: number;
 };
 
+export type UserDetails = {
+    email: string;
+    displayName: string;
+    image: string | null;
+}
+
 type LocationStream = {
     close: () => void;
 };
@@ -246,7 +252,7 @@ export const usersApi = {
         }),
 
     userDetails: () =>
-        request<ApiResult<{ email: string, displayName: string, image: string | null }>>('/users/user-details'),
+        request<ApiResult<UserDetails>>('/users/user-details'),
 };
 
 export const locationApi = {

@@ -25,9 +25,9 @@ export default function Settings() {
             marginTop: 80
         },
         pageTitleText: {
-            fontSize: 28,
+            fontSize: 20,
             fontWeight: 500,
-            padding: 20
+            padding: 10
         },
         settingContainer: {
             width: "100%",

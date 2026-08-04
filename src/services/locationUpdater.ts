@@ -84,6 +84,7 @@ export async function initializeLocationUpdater() {
             const isStarted = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK);
             
             if (isStarted) {
+                // always restart background service on app open
                 await Location.stopLocationUpdatesAsync(LOCATION_TASK)
 
                 await Location.startLocationUpdatesAsync(

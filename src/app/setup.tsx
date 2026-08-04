@@ -1,4 +1,4 @@
-import { Animated, Easing, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
+import { Animated, Easing, KeyboardAvoidingView, Keyboard, Platform, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
 import { Button, Input } from '@/components/ui/elements';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -70,13 +70,14 @@ export default function SetupScreen() {
 
     return (
         <ThemedView style={styles.page}>
-            <View style={styles.logoContainer}><Logo/></View>
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+                <View style={{ flex: 1 }}>
+                    <View style={styles.logoContainer}><Logo/></View>
 
-            <KeyboardAvoidingView
-                behavior={Platform.select({ ios: 'padding', android: 'height', web: 'padding' })}
-                style={styles.container}>
-
-                <ThemedText type="title" style={styles.title}>
+                    <KeyboardAvoidingView
+                        behavior={Platform.select({ ios: 'padding', android: 'height', web: 'padding' })}
+                        style={styles.container}>
+                        <ThemedText type="title" style={styles.title}>
                     Welcome to <LogoText style={{fontWeight: 600, fontSize: 36}}/>
                 </ThemedText>
 
@@ -158,7 +159,9 @@ export default function SetupScreen() {
                     disabled={!isURLValid || isSaving}>
                     {isSaving ? <LoadingSpinner size={18} /> : 'Next'}
                 </Button>
-            </KeyboardAvoidingView>
+                    </KeyboardAvoidingView>
+                </View>
+            </TouchableWithoutFeedback>
         </ThemedView>
     );
 }
