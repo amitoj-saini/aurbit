@@ -99,8 +99,8 @@ export function Button({ children, style, ...props }: ButtonProps ) {
             textAlign: 'center',
         },
         text: {
-            color: theme.textOpposite,
-            fontWeight: 400,
+            color: theme.backgroundSelected,
+            fontWeight: 500,
             fontSize: 14
         }
     })

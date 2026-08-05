@@ -110,7 +110,6 @@ export default function SetupScreen() {
                 <Animated.View
                     pointerEvents={isURLValid ? 'auto' : 'none'}
                     style={[
-                        styles.tokenRevealContainer,
                         {
                             maxHeight: revealAnimation.interpolate({
                                 inputRange: [0, 1],
@@ -217,9 +216,6 @@ const styles = StyleSheet.create({
     inputLabel: {
         marginTop: 5,
         fontSize: 12
-    },
-    tokenRevealContainer: {
-        overflow: 'hidden',
     },
     tokenContent: {
         marginTop: 6,

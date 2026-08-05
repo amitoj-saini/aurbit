@@ -1,9 +1,9 @@
 
-import { StyleSheet, StyleProp, ViewStyle, Pressable } from 'react-native';
+import { StyleSheet, StyleProp, ViewStyle, Pressable, Animated } from 'react-native';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedView } from '../themed-view';
-import { Settings } from 'lucide-react-native';
-import { ReactNode } from 'react';
+import { CircleCheck, Settings } from 'lucide-react-native';
+import { ReactNode, useEffect, useRef } from 'react';
 import { useRouter, useSegments } from 'expo-router';
 import Logo from './logo';
 
@@ -11,6 +11,11 @@ type NavigationItemProps = {
     style?: StyleProp<ViewStyle>;
     children: ReactNode,
     onPress?: () => void
+}
+
+type NavigationProps = {
+    selected?: string;
+    notification?: string | null;
 }
 
 function NavigationItem({ style, children, onPress }: NavigationItemProps) {
@@ -32,7 +37,7 @@ function NavigationItem({ style, children, onPress }: NavigationItemProps) {
     );
 }
 
-export default function Navigation({selected = "aurbit"}) {
+export default function Navigation({selected = "aurbit", notification = null}: NavigationProps) {
     const theme = useTheme();
     const router = useRouter();
     const segments = useSegments();
@@ -72,28 +77,43 @@ export default function Navigation({selected = "aurbit"}) {
         selected: {
             backgroundColor: `${theme.backgroundTertiary}`,
             boxShadow: theme.boxShadow
+        },
+        notification: {
+            width: 100,
+            height: "100%",
+            backgroundColor: "transparent",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center"
         }
     })
 
     return (
         <ThemedView style={styles.centerNavigation}>
             <ThemedView style={styles.navigationContainer}>
-                
-                <NavigationItem onPress={() => { if (selectedNavigationItem !== "aurbit") router.push("/aurbit"); }} style={(selectedNavigationItem === "aurbit") ? styles.selected : {}}>
-                    <Logo width={36} height={36}/>
-                </NavigationItem>
+                {!notification && <>
+                    <NavigationItem onPress={() => { if (selectedNavigationItem !== "aurbit") router.push("/aurbit"); }} style={(selectedNavigationItem === "aurbit") ? styles.selected : {}}>
+                        <Logo width={36} height={36}/>
+                    </NavigationItem>
 
-                <NavigationItem
-                    onPress={() => {
-                        if (isInSettingsChildRoute && router.canGoBack()) {
-                            router.back();
-                        } else if (selectedNavigationItem !== "settings" || isInSettingsChildRoute) {
-                            router.push("/settings");
-                        }
-                    }}
-                    style={(selectedNavigationItem === "settings") ? styles.selected : {}}>
-                    <Settings color={theme.text} size={18}/>
-                </NavigationItem>
+                    <NavigationItem
+                        onPress={() => {
+                            if (isInSettingsChildRoute && router.canGoBack()) {
+                                router.back();
+                            } else if (selectedNavigationItem !== "settings" || isInSettingsChildRoute) {
+                                router.push("/settings");
+                            }
+                        }}
+                        style={(selectedNavigationItem === "settings") ? styles.selected : {}}>
+                        <Settings color={theme.text} size={18}/>
+                    </NavigationItem>
+                </>}
+
+                {notification && (
+                    <ThemedView style={styles.notification}>
+                        <CircleCheck size={32} color={theme.accentPrimary}></CircleCheck>
+                    </ThemedView>
+                )}
             </ThemedView>
         </ThemedView>
     )

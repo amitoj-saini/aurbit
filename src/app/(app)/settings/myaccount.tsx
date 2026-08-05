@@ -1,6 +1,6 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Input } from '@/components/ui/elements';
+import { Input, Button } from '@/components/ui/elements';
 import Loader from '@/components/ui/loader';
 import Navigation from '@/components/ui/navigation';
 import { useTheme } from '@/hooks/use-theme';
@@ -8,23 +8,37 @@ import { usersApi, UserDetails } from '@/lib/api';
 import appLog from '@/lib/logger';
 import { router } from 'expo-router';
 import { ChevronLeft, Pencil } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
-import { Keyboard, Pressable, StyleSheet, TouchableWithoutFeedback } from 'react-native';
+import { useEffect, useState, useMemo } from 'react';
+import { Keyboard, Pressable, StyleSheet, TouchableWithoutFeedback, Image, Platform, Alert } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function MyAccount() {
     const [isLoading, setIsLoading] = useState(false);
     const theme = useTheme();
     const [accountDetails, setAccountDetails] = useState<UserDetails | null>(null);
+    const [editedDisplayName, setEditedDisplayName] = useState('');
+    const [editedEmail, setEditedEmail] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const [editSuccess, setEditSuccess] = useState(false);
+    const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+    const [selectedImageFile, setSelectedImageFile] = useState<any>(undefined);
 
     useEffect(() => {
         const fetchUserDetails = async () => {
             setIsLoading(true)
             let response = await usersApi.userDetails();
             
-            if (response.err || !response.data) 
-                return appLog("auth", response.err ? response.err.message : "User detail err");
-            console.log(response.data)
+            if (response.err || !response.data) {
+                appLog("auth", response.err ? response.err.message : "User detail err");
+                setIsLoading(false);
+                return;
+            }
+
             setAccountDetails(response.data);
+            setEditedDisplayName(response.data.displayName ?? '');
+            setEditedEmail(response.data.email ?? '');
+            setSelectedImageUri(response.data.image ? `data:image/jpeg;base64,${response.data.image}` : null);
 
             setIsLoading(false);
         }
@@ -102,6 +116,12 @@ export default function MyAccount() {
         },
     });
 
+    // compute dirty state whenever edited values or original account details change
+    const isDirty = useMemo(() => {
+        if (!accountDetails) return false;
+        return (editedDisplayName ?? '') !== (accountDetails.displayName ?? '') || (editedEmail ?? '') !== (accountDetails.email ?? '') || !!selectedImageFile;
+    }, [editedDisplayName, editedEmail, accountDetails, selectedImageFile]);
+
     if (isLoading || !accountDetails) {
         return (
             <Loader></Loader>
@@ -119,11 +139,74 @@ export default function MyAccount() {
                 
                 <ThemedView style={styles.settingContainer}>
                     <ThemedView style={{width: "100%", marginTop: 40, display: "flex", justifyContent: "center", alignItems: "center"}}>
-                        {accountDetails.image ? <></> : (
-                            <ThemedView style={styles.profilePicture}>
-                                <ThemedText>{accountDetails.displayName.trim().split(/\s+/).map(n => n[0]).slice(0, 2).join("").toUpperCase()}</ThemedText>
-                            </ThemedView>
-                        )}
+                        <Pressable onPress={async () => {
+                            try {
+                                // If expo-image-picker native module isn't available, inform the user
+                                const hasRequestPermission = ImagePicker && typeof ImagePicker.requestMediaLibraryPermissionsAsync === 'function';
+                                if (!hasRequestPermission) {
+                                    // On web the ImagePicker API may not be present; fall back to a helpful alert
+                                    if (Platform.OS === 'web') {
+                                        appLog('ui', 'Image picker not available on web in this build');
+                                        Alert.alert('Image upload unavailable', 'This build does not include the image picker. Try using the web upload flow or enable the module in your environment.');
+                                        return;
+                                    }
+
+                                    // Native: advise installing the native module / rebuilding
+                                    Alert.alert('Image picker not available', 'The native image picker module (expo-image-picker) is not installed in this build. Please install it and rebuild the app.');
+                                    return;
+                                }
+
+                                // request permission
+                                const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                                if (status !== 'granted') {
+                                    appLog('ui', 'Image picker permission not granted');
+                                    return;
+                                }
+
+                                const result = await ImagePicker.launchImageLibraryAsync({
+                                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                                    allowsEditing: true,
+                                    quality: 0.8,
+                                });
+
+                                if ((result as any).canceled) return;
+
+                                const uri = result.assets?.[0]?.uri ?? (result as any).uri;
+                                if (!uri) return;
+
+                                setSelectedImageUri(uri);
+
+                                // prepare file object for form upload
+                                if (Platform.OS === 'web') {
+                                    // fetch blob and convert to File
+                                    const res = await fetch(uri);
+                                    const blob = await res.blob();
+                                    const name = uri.split('/').pop() ?? `photo.${blob.type.split('/').pop()}`;
+                                    const file = new File([blob], name, { type: blob.type });
+                                    setSelectedImageFile(file);
+                                } else {
+                                    // React Native: append an object with uri, name, type
+                                    const name = uri.split('/').pop() ?? 'photo.jpg';
+                                    // best-effort mime type
+                                    const type = 'image/jpeg';
+                                    setSelectedImageFile({ uri, name, type });
+                                }
+
+                            } catch (e) {
+                                appLog('ui', 'Error picking image', { error: String(e) });
+                            }
+                        }} style={styles.profilePicture}>
+                            {selectedImageUri ? (
+                                <Image source={{ uri: selectedImageUri }} style={{ width: 65, height: 65, borderRadius: 55 }} />
+                            ) : accountDetails.image ? (
+                                <Image source={{ uri: `data:image/jpeg;base64,${accountDetails.image}` }} style={{ width: 65, height: 65, borderRadius: 55 }} />
+                            ) : (
+                                <ThemedView style={styles.profilePicture}>
+                                    <ThemedText>{accountDetails.displayName.trim().split(/\s+/).map(n => n[0]).slice(0, 2).join("").toUpperCase()}</ThemedText>
+                                </ThemedView>
+                            )}
+                        </Pressable>
+
                         <ThemedView style={styles.editContainer}>
                             <Pencil size={14} color={theme.background}></Pencil>
                         </ThemedView>
@@ -139,7 +222,8 @@ export default function MyAccount() {
                         autoCorrect={false}
                         placeholder="Edit your display name"
                         returnKeyType="done"
-                        value={accountDetails.displayName}
+                        value={editedDisplayName}
+                        onChangeText={(v) => setEditedDisplayName(v)}
                     />
 
                     <ThemedText type="small" themeColor="textSecondary" style={styles.inputLabel}>
@@ -152,12 +236,57 @@ export default function MyAccount() {
                         placeholder="Edit your email"
                         returnKeyType="done"
                         keyboardType="email-address"
-                        value={accountDetails.email}
+                        value={editedEmail}
+                        onChangeText={(v) => setEditedEmail(v)}
                     />
+
+                    <Button
+                        style={{marginTop: 20, opacity: isDirty ? 1 : 0.3}}
+                        disabled={!isDirty || isSaving}
+                        onPress={async () => {
+                            // save changes
+                            setIsSaving(true);
+                            try {
+                                const res = await usersApi.editDetails(selectedImageFile, {
+                                    displayName: editedDisplayName,
+                                    email: editedEmail,
+                                });
+
+                                if (res.err) {
+                                    appLog('auth', 'Failed to edit details', { error: res.err.message });
+                                } else {
+                                    // notify user
+                                    setEditSuccess(true);
+                                    setTimeout(() => setEditSuccess(false), 2000);
+
+                                    // update local state and refetch image from server
+                                    
+                                    setAccountDetails((prev) => prev ? { ...prev, displayName: editedDisplayName, email: editedEmail } : prev);
+                                    setSelectedImageFile(undefined);
+
+                                    // refetch to pick up server-side image (base64)
+                                    const refreshed = await usersApi.userDetails();
+                                    if (!refreshed.err && refreshed.data) {
+                                        setAccountDetails(refreshed.data);
+                                        setEditedDisplayName(refreshed.data.displayName ?? '');
+                                        setEditedEmail(refreshed.data.email ?? '');
+                                        setSelectedImageUri(refreshed.data.image ? `data:image/jpeg;base64,${refreshed.data.image}` : null);
+                                    }
+                                }
+                            } catch (e) {
+                                appLog('auth', 'Unexpected error editing details', { error: String(e) });
+                            }
+
+                            setIsSaving(false);
+                        }}
+                    >
+                        {isSaving ? <LoadingSpinner size={18} /> : 'Save Changes'}
+                    </Button>
                     
                 </ThemedView>
                 
-                <Navigation selected="settings"></Navigation>
+                {editSuccess ? <Navigation selected="settings" notification="success"></Navigation> : <Navigation selected="settings"></Navigation>}
+                
             </ThemedView>
         </TouchableWithoutFeedback>
         );

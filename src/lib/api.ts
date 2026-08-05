@@ -19,7 +19,7 @@ export class ApiResponse<TData = unknown> {
 
 type RequestOptions<TBody = unknown> = {
     method?: HttpMethod;
-    body?: TBody;
+    body?: TBody | FormData;
     headers?: Record<string, string>;
     params?: Record<string, string | number | boolean | undefined>;
 };
@@ -171,8 +171,11 @@ export async function request<TData = unknown>(path: string, options: RequestOpt
             ...(options.headers ?? {}),
         };
 
-        // only set content-type when a body will be sent for non-GET requests
-        if (options.body !== undefined && (options.method ?? 'GET') !== 'GET') {
+        const method = options.method ?? 'GET';
+        const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+
+        // only set content-type when a body will be sent for non-GET requests and body is not FormData
+        if (options.body !== undefined && method !== 'GET' && !isFormData) {
             headers['Content-Type'] = 'application/json';
         }
 
@@ -190,9 +193,10 @@ export async function request<TData = unknown>(path: string, options: RequestOpt
 
         const url = new URL(buildUrl(path, options.params), `${connectionDetails.endpoint.replace(/\/$/, '')}/`);
         const response = await fetch(url.toString(), {
-            method: options.method ?? 'GET',
+            method,
             headers,
-            body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+            body: isFormData ? (options.body as FormData) : options.body !== undefined ? JSON.stringify(options.body) : undefined,
+            signal: AbortSignal.timeout(5000)
         });
 
         const contentType = response.headers.get('content-type') ?? '';
@@ -253,6 +257,19 @@ export const usersApi = {
 
     userDetails: () =>
         request<ApiResult<UserDetails>>('/users/user-details'),
+
+    // multipart/form-data endpoint for editing user details with an image
+    editDetails: async (file: File | undefined, details: { displayName: string; email: string }) => {
+        const form = new FormData();
+        if (file) form.append('file', file);
+        form.append('data', JSON.stringify(details));
+
+        return request<unknown>('/users/edit-details', {
+            method: 'POST',
+            body: form,
+        });
+        
+    },
 };
 
 export const locationApi = {
