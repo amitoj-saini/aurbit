@@ -9,286 +9,514 @@ import appLog from '@/lib/logger';
 import { router } from 'expo-router';
 import { ChevronLeft, Pencil } from 'lucide-react-native';
 import { useEffect, useState, useMemo } from 'react';
-import { Keyboard, Pressable, StyleSheet, TouchableWithoutFeedback, Image, Platform, Alert } from 'react-native';
+import {
+    Keyboard,
+    Pressable,
+    StyleSheet,
+    TouchableWithoutFeedback,
+    Image,
+    Platform,
+    Alert,
+} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { File as ExpoFile } from 'expo-file-system';
+
+type SelectedImageFile = ExpoFile | globalThis.File;
 
 export default function MyAccount() {
     const [isLoading, setIsLoading] = useState(false);
     const theme = useTheme();
-    const [accountDetails, setAccountDetails] = useState<UserDetails | null>(null);
+
+    const [accountDetails, setAccountDetails] =
+        useState<UserDetails | null>(null);
+
     const [editedDisplayName, setEditedDisplayName] = useState('');
     const [editedEmail, setEditedEmail] = useState('');
+
     const [isSaving, setIsSaving] = useState(false);
     const [editSuccess, setEditSuccess] = useState(false);
-    const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
-    const [selectedImageFile, setSelectedImageFile] = useState<any>(undefined);
+
+    const [selectedImageUri, setSelectedImageUri] =
+        useState<string | null>(null);
+
+    const [selectedImageFile, setSelectedImageFile] =
+        useState<SelectedImageFile | null>(null);
 
     useEffect(() => {
         const fetchUserDetails = async () => {
-            setIsLoading(true)
-            let response = await usersApi.userDetails();
-            
+            setIsLoading(true);
+
+            const response = await usersApi.userDetails();
+
             if (response.err || !response.data) {
-                appLog("auth", response.err ? response.err.message : "User detail err");
+                appLog(
+                    'auth',
+                    response.err
+                        ? response.err.message
+                        : 'User detail err'
+                );
+
                 setIsLoading(false);
                 return;
             }
 
             setAccountDetails(response.data);
-            setEditedDisplayName(response.data.displayName ?? '');
+            setEditedDisplayName(
+                response.data.displayName ?? ''
+            );
             setEditedEmail(response.data.email ?? '');
-            setSelectedImageUri(response.data.image ? `data:image/jpeg;base64,${response.data.image}` : null);
+
+            setSelectedImageUri(
+                response.data.image
+                    ? `data:image/jpeg;base64,${response.data.image}`
+                    : null
+            );
 
             setIsLoading(false);
-        }
+        };
 
         fetchUserDetails();
-    }, [])
+    }, []);
 
     const styles = StyleSheet.create({
         page: {
-            width: "100%",
-            height: "100%"
+            width: '100%',
+            height: '100%',
         },
+
         pageTitle: {
-            width: "100%",
-            
-            display: "flex",
-            textAlign: "center",
-            justifyContent: "center",
-            alignItems: "center",
-            marginTop: 80
+            width: '100%',
+            display: 'flex',
+            textAlign: 'center',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginTop: 80,
         },
+
         pageTitleText: {
             fontSize: 20,
             fontWeight: 500,
-            padding: 10
+            padding: 10,
         },
+
         settingContainer: {
-            width: "100%",
-            display: "flex",
-            paddingHorizontal: 15
+            width: '100%',
+            display: 'flex',
+            paddingHorizontal: 15,
         },
+
         backButton: {
-            position: "absolute",
+            position: 'absolute',
             left: 30,
-            borderStyle: "solid",
+            borderStyle: 'solid',
             borderRadius: 20,
             width: 60,
             height: 40,
             borderColor: theme.backgroundTertiary,
             boxShadow: theme.boxShadow,
             borderWidth: 1,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            marginTop: -10
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginTop: -10,
         },
+
         profilePicture: {
-            width: 65,
-            height: 65,
-            borderStyle: "solid",
+            minWidth: 65,
+            minHeight: 65,
+            padding: 2,
+            borderStyle: 'solid',
             borderWidth: 1,
             borderColor: theme.text,
             backgroundColor: `${theme.backgroundSecondary}D9`,
             borderRadius: 55,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center"
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
         },
+
         editContainer: {
-            width: 22, 
-            height: 22, 
-            backgroundColor: theme.text, 
+            width: 22,
+            height: 22,
+            backgroundColor: theme.text,
             borderRadius: 35,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
             boxShadow: theme.boxShadow,
-            position: "absolute",
+            position: 'absolute',
             top: 0,
-            marginLeft: 48
+            marginLeft: 48,
         },
+
         inputLabel: {
             marginTop: 15,
-            fontSize: 12
+            fontSize: 12,
         },
     });
 
-    // compute dirty state whenever edited values or original account details change
     const isDirty = useMemo(() => {
         if (!accountDetails) return false;
-        return (editedDisplayName ?? '') !== (accountDetails.displayName ?? '') || (editedEmail ?? '') !== (accountDetails.email ?? '') || !!selectedImageFile;
-    }, [editedDisplayName, editedEmail, accountDetails, selectedImageFile]);
+
+        return (
+            (editedDisplayName ?? '') !==
+            (accountDetails.displayName ?? '') ||
+            (editedEmail ?? '') !==
+            (accountDetails.email ?? '') ||
+            !!selectedImageFile
+        );
+    }, [
+        editedDisplayName,
+        editedEmail,
+        accountDetails,
+        selectedImageFile,
+    ]);
+
+    const pickImage = async () => {
+        try {
+            const hasRequestPermission =
+                ImagePicker &&
+                typeof ImagePicker.requestMediaLibraryPermissionsAsync ===
+                'function';
+
+            if (!hasRequestPermission) {
+                if (Platform.OS === 'web') {
+                    appLog(
+                        'ui',
+                        'Image picker not available on web in this build'
+                    );
+
+                    Alert.alert(
+                        'Image upload unavailable',
+                        'This build does not include the image picker.'
+                    );
+
+                    return;
+                }
+
+                Alert.alert(
+                    'Image picker not available',
+                    'The native image picker module is not available in this build. Please install expo-image-picker and rebuild the app.'
+                );
+
+                return;
+            }
+
+            const { status } =
+                await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+            if (status !== 'granted') {
+                appLog(
+                    'ui',
+                    'Image picker permission not granted'
+                );
+
+                return;
+            }
+
+            const result =
+                await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ['images'],
+                    allowsEditing: true,
+                    quality: 0.8,
+                });
+
+            if (result.canceled) {
+                return;
+            }
+
+            const asset = result.assets?.[0];
+
+            if (!asset?.uri) {
+                appLog(
+                    'ui',
+                    'Image picker returned no asset URI'
+                );
+
+                return;
+            }
+
+            setSelectedImageUri(asset.uri);
+
+            if (Platform.OS === 'web') {
+                const response = await fetch(asset.uri);
+                const blob = await response.blob();
+
+                const extension =
+                    blob.type.split('/').pop() ?? 'jpg';
+
+                const name =
+                    asset.fileName ??
+                    `photo.${extension}`;
+
+                const file = new globalThis.File(
+                    [blob],
+                    name,
+                    {
+                        type:
+                            blob.type ||
+                            asset.mimeType ||
+                            'image/jpeg',
+                    }
+                );
+
+                setSelectedImageFile(file);
+            } else {
+                const file = new ExpoFile(asset.uri);
+
+                setSelectedImageFile(file);
+            }
+        } catch (e) {
+            appLog('ui', 'Error picking image', {
+                error: String(e),
+            });
+        }
+    };
+
+    const saveChanges = async () => {
+        setIsSaving(true);
+
+        try {
+            const res = await usersApi.editDetails(
+                selectedImageFile ?? undefined,
+                {
+                    displayName: editedDisplayName,
+                    email: editedEmail,
+                }
+            );
+
+            if (res.err) {
+                appLog(
+                    'auth',
+                    'Failed to edit details',
+                    {
+                        error: res.err.message,
+                    }
+                );
+
+                return;
+            }
+
+            setEditSuccess(true);
+
+            setTimeout(() => {
+                setEditSuccess(false);
+            }, 2000);
+
+            setAccountDetails((prev) =>
+                prev
+                    ? {
+                        ...prev,
+                        displayName: editedDisplayName,
+                        email: editedEmail,
+                    }
+                    : prev
+            );
+
+            setSelectedImageFile(null);
+
+            const refreshed =
+                await usersApi.userDetails();
+
+            if (!refreshed.err && refreshed.data) {
+                setAccountDetails(refreshed.data);
+
+                setEditedDisplayName(
+                    refreshed.data.displayName ?? ''
+                );
+
+                setEditedEmail(
+                    refreshed.data.email ?? ''
+                );
+
+                setSelectedImageUri(
+                    refreshed.data.image
+                        ? `data:image/jpeg;base64,${refreshed.data.image}`
+                        : null
+                );
+            }
+        } catch (e) {
+            appLog(
+                'auth',
+                'Unexpected error editing details',
+                {
+                    error: String(e),
+                }
+            );
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     if (isLoading || !accountDetails) {
-        return (
-            <Loader></Loader>
-        )
-    } else {
-        return (
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-                <ThemedView style={styles.page}>
-                    <ThemedView style={styles.pageTitle}>
-                        <Pressable onPress={() => router.push("/settings")} style={styles.backButton}>
-                            <ChevronLeft size={28} color={theme.textSecondary}></ChevronLeft>
-                        </Pressable>
-                        <ThemedText style={styles.pageTitleText}>My Account</ThemedText>
-                    </ThemedView>
-                
-                <ThemedView style={styles.settingContainer}>
-                    <ThemedView style={{width: "100%", marginTop: 40, display: "flex", justifyContent: "center", alignItems: "center"}}>
-                        <Pressable onPress={async () => {
-                            try {
-                                // If expo-image-picker native module isn't available, inform the user
-                                const hasRequestPermission = ImagePicker && typeof ImagePicker.requestMediaLibraryPermissionsAsync === 'function';
-                                if (!hasRequestPermission) {
-                                    // On web the ImagePicker API may not be present; fall back to a helpful alert
-                                    if (Platform.OS === 'web') {
-                                        appLog('ui', 'Image picker not available on web in this build');
-                                        Alert.alert('Image upload unavailable', 'This build does not include the image picker. Try using the web upload flow or enable the module in your environment.');
-                                        return;
-                                    }
+        return <Loader />;
+    }
 
-                                    // Native: advise installing the native module / rebuilding
-                                    Alert.alert('Image picker not available', 'The native image picker module (expo-image-picker) is not installed in this build. Please install it and rebuild the app.');
-                                    return;
-                                }
+    return (
+        <TouchableWithoutFeedback
+            onPress={Keyboard.dismiss}
+            accessible={false}
+        >
+            <ThemedView style={styles.page}>
+                <ThemedView style={styles.pageTitle}>
+                    <Pressable
+                        onPress={() =>
+                            router.push('/settings')
+                        }
+                        style={styles.backButton}
+                    >
+                        <ChevronLeft
+                            size={28}
+                            color={theme.textSecondary}
+                        />
+                    </Pressable>
 
-                                // request permission
-                                const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-                                if (status !== 'granted') {
-                                    appLog('ui', 'Image picker permission not granted');
-                                    return;
-                                }
+                    <ThemedText
+                        style={styles.pageTitleText}
+                    >
+                        My Account
+                    </ThemedText>
+                </ThemedView>
 
-                                const result = await ImagePicker.launchImageLibraryAsync({
-                                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                                    allowsEditing: true,
-                                    quality: 0.8,
-                                });
-
-                                if ((result as any).canceled) return;
-
-                                const uri = result.assets?.[0]?.uri ?? (result as any).uri;
-                                if (!uri) return;
-
-                                setSelectedImageUri(uri);
-
-                                // prepare file object for form upload
-                                if (Platform.OS === 'web') {
-                                    // fetch blob and convert to File
-                                    const res = await fetch(uri);
-                                    const blob = await res.blob();
-                                    const name = uri.split('/').pop() ?? `photo.${blob.type.split('/').pop()}`;
-                                    const file = new File([blob], name, { type: blob.type });
-                                    setSelectedImageFile(file);
-                                } else {
-                                    // React Native: append an object with uri, name, type
-                                    const name = uri.split('/').pop() ?? 'photo.jpg';
-                                    // best-effort mime type
-                                    const type = 'image/jpeg';
-                                    setSelectedImageFile({ uri, name, type });
-                                }
-
-                            } catch (e) {
-                                appLog('ui', 'Error picking image', { error: String(e) });
-                            }
-                        }} style={styles.profilePicture}>
+                <ThemedView
+                    style={styles.settingContainer}
+                >
+                    {/* Profile picture */}
+                    <ThemedView
+                        style={{
+                            width: '100%',
+                            marginTop: 40,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                        }}
+                    >
+                        <Pressable
+                            onPress={pickImage}
+                            style={styles.profilePicture}
+                        >
                             {selectedImageUri ? (
-                                <Image source={{ uri: selectedImageUri }} style={{ width: 65, height: 65, borderRadius: 55 }} />
+                                <Image
+                                    source={{
+                                        uri: selectedImageUri,
+                                    }}
+                                    style={{
+                                        width: 65,
+                                        height: 65,
+                                        borderRadius: 55,
+                                        margin: 0,
+                                    }}
+                                />
                             ) : accountDetails.image ? (
-                                <Image source={{ uri: `data:image/jpeg;base64,${accountDetails.image}` }} style={{ width: 65, height: 65, borderRadius: 55 }} />
+                                <Image
+                                    source={{
+                                        uri: `data:image/jpeg;base64,${accountDetails.image}`,
+                                    }}
+                                    style={{
+                                        width: 65,
+                                        height: 65,
+                                        borderRadius: 55,
+                                        margin: 0,
+                                    }}
+                                />
                             ) : (
-                                <ThemedView style={styles.profilePicture}>
-                                    <ThemedText>{accountDetails.displayName.trim().split(/\s+/).map(n => n[0]).slice(0, 2).join("").toUpperCase()}</ThemedText>
+                                <ThemedView
+                                    style={[styles.profilePicture, {height: 65, width: 65}]}
+                                >
+                                    <ThemedText>
+                                        {accountDetails.displayName
+                                            .trim()
+                                            .split(/\s+/)
+                                            .map(
+                                                (n) => n[0]
+                                            )
+                                            .slice(0, 2)
+                                            .join('')
+                                            .toUpperCase()}
+                                    </ThemedText>
                                 </ThemedView>
                             )}
                         </Pressable>
 
-                        <ThemedView style={styles.editContainer}>
-                            <Pencil size={14} color={theme.background}></Pencil>
+                        <ThemedView
+                            style={styles.editContainer}
+                        >
+                            <Pencil
+                                size={14}
+                                color={theme.background}
+                            />
                         </ThemedView>
-                        
                     </ThemedView>
 
-                    <ThemedText type="small" themeColor="textSecondary" style={[styles.inputLabel, {marginTop: 20}]}>
+                    {/* Display Name */}
+                    <ThemedText
+                        type="small"
+                        themeColor="textSecondary"
+                        style={[
+                            styles.inputLabel,
+                            { marginTop: 20 },
+                        ]}
+                    >
                         Display Name
                     </ThemedText>
+
                     <Input
-                        style={{marginTop: 4}}
+                        style={{ marginTop: 4 }}
                         autoCapitalize="none"
                         autoCorrect={false}
                         placeholder="Edit your display name"
                         returnKeyType="done"
                         value={editedDisplayName}
-                        onChangeText={(v) => setEditedDisplayName(v)}
+                        onChangeText={setEditedDisplayName}
                     />
 
-                    <ThemedText type="small" themeColor="textSecondary" style={styles.inputLabel}>
+                    {/* Email */}
+                    <ThemedText
+                        type="small"
+                        themeColor="textSecondary"
+                        style={styles.inputLabel}
+                    >
                         Email
                     </ThemedText>
+
                     <Input
-                        style={{marginTop: 4}}
+                        style={{ marginTop: 4 }}
                         autoCapitalize="none"
                         autoCorrect={false}
                         placeholder="Edit your email"
                         returnKeyType="done"
                         keyboardType="email-address"
                         value={editedEmail}
-                        onChangeText={(v) => setEditedEmail(v)}
+                        onChangeText={setEditedEmail}
                     />
 
+                    {/* Save */}
                     <Button
-                        style={{marginTop: 20, opacity: isDirty ? 1 : 0.3}}
-                        disabled={!isDirty || isSaving}
-                        onPress={async () => {
-                            // save changes
-                            setIsSaving(true);
-                            try {
-                                const res = await usersApi.editDetails(selectedImageFile, {
-                                    displayName: editedDisplayName,
-                                    email: editedEmail,
-                                });
-
-                                if (res.err) {
-                                    appLog('auth', 'Failed to edit details', { error: res.err.message });
-                                } else {
-                                    // notify user
-                                    setEditSuccess(true);
-                                    setTimeout(() => setEditSuccess(false), 2000);
-
-                                    // update local state and refetch image from server
-                                    
-                                    setAccountDetails((prev) => prev ? { ...prev, displayName: editedDisplayName, email: editedEmail } : prev);
-                                    setSelectedImageFile(undefined);
-
-                                    // refetch to pick up server-side image (base64)
-                                    const refreshed = await usersApi.userDetails();
-                                    if (!refreshed.err && refreshed.data) {
-                                        setAccountDetails(refreshed.data);
-                                        setEditedDisplayName(refreshed.data.displayName ?? '');
-                                        setEditedEmail(refreshed.data.email ?? '');
-                                        setSelectedImageUri(refreshed.data.image ? `data:image/jpeg;base64,${refreshed.data.image}` : null);
-                                    }
-                                }
-                            } catch (e) {
-                                appLog('auth', 'Unexpected error editing details', { error: String(e) });
-                            }
-
-                            setIsSaving(false);
+                        style={{
+                            marginTop: 20,
+                            opacity: isDirty ? 1 : 0.3,
                         }}
+                        disabled={!isDirty || isSaving}
+                        onPress={saveChanges}
                     >
-                        {isSaving ? <LoadingSpinner size={18} /> : 'Save Changes'}
+                        {isSaving ? (
+                            <LoadingSpinner size={18} />
+                        ) : (
+                            'Save Changes'
+                        )}
                     </Button>
-                    
                 </ThemedView>
-                
-                {editSuccess ? <Navigation selected="settings" notification="success"></Navigation> : <Navigation selected="settings"></Navigation>}
-                
+
+                {editSuccess ? (
+                    <Navigation
+                        selected="settings"
+                        notification="success"
+                    />
+                ) : (
+                    <Navigation selected="settings" />
+                )}
             </ThemedView>
         </TouchableWithoutFeedback>
-        );
-    }
+    );
 }

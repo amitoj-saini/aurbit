@@ -258,17 +258,28 @@ export const usersApi = {
     userDetails: () =>
         request<ApiResult<UserDetails>>('/users/user-details'),
 
-    // multipart/form-data endpoint for editing user details with an image
-    editDetails: async (file: File | undefined, details: { displayName: string; email: string }) => {
+    editDetails: async (
+        file: File | { uri: string; name?: string; type?: string } | undefined,
+        details: { displayName: string; email: string }
+    ) => {
         const form = new FormData();
-        if (file) form.append('file', file);
+        if (file) {
+            // In React Native, FormData.append accepts an object with uri, name, type
+            if (typeof (file as any).uri === 'string') {
+                form.append('file', file as any);
+            } else {
+                // Browser File
+                form.append('file', file as File);
+            }
+        }
+
+        console.log(form)
         form.append('data', JSON.stringify(details));
 
         return request<unknown>('/users/edit-details', {
             method: 'POST',
             body: form,
         });
-        
     },
 };
 

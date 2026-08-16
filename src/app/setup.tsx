@@ -203,6 +203,7 @@ const styles = StyleSheet.create({
     errorText: {
         color: '#ee5253',
         marginBottom: Spacing.two,
+        marginTop: Spacing.two
     },
     button: {
         height: 52,

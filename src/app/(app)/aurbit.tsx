@@ -2,7 +2,7 @@ import { ThemedView } from '@/components/themed-view';
 import Loader from '@/components/ui/loader';
 import Navigation from '@/components/ui/navigation';
 import { useEffect, useState } from 'react';
-import { StyleSheet, useColorScheme } from 'react-native';
+import { StyleSheet, useColorScheme, Image } from 'react-native';
 import MapView, { MapViewProps, Marker } from 'react-native-maps';
 import { locationApi } from '@/lib/api';
 import type { UserLocation } from '@/lib/api';
@@ -31,16 +31,15 @@ export default function App() {
 
         },
         markerContainer: {
-            width: 50,
-            height: 50,
-            borderStyle: "solid",
+            padding: 2,
+            borderStyle: 'solid',
             borderWidth: 1,
             borderColor: theme.text,
             backgroundColor: `${theme.backgroundSecondary}D9`,
             borderRadius: 55,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center"
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
         }
     });
 
@@ -54,6 +53,7 @@ export default function App() {
                 connection = await locationApi.stream(
                     (users: UserLocation[]) => {
                         appLog("location", "Fetched user locations", users);
+                        console.log(users)
                         setUsers(users);
                         setIsLoading(false);
                     },
@@ -81,7 +81,7 @@ export default function App() {
             <Loader></Loader>
         )
     }
-
+    
     return (
         <ThemedView style={styles.page}>
             <MapView userInterfaceStyle={mapTheme} style={styles.map}>
@@ -91,8 +91,22 @@ export default function App() {
                         latitude: user.latitude
                     }}>
                         
-                        {user.image ? <></> : (
-                            <ThemedView style={styles.markerContainer}>
+                        {user.image ? (
+                            <ThemedView style={[styles.markerContainer]}>
+                                <Image
+                                    source={{
+                                        uri: `data:image/jpeg;base64,${user.image}`,
+                                    }}
+                                    style={{
+                                        width: 50,
+                                        height: 50,
+                                        borderRadius: 55,
+                                        margin: 0,
+                                    }}
+                                />
+                            </ThemedView>
+                        ) : (
+                            <ThemedView style={[styles.markerContainer, {height: 50, width: 50}]}>
                                 <ThemedText>{user.user.trim().split(/\s+/).map(n => n[0]).slice(0, 2).join("").toUpperCase()}</ThemedText>
                             </ThemedView>
                         )}
