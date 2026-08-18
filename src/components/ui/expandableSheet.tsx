@@ -15,12 +15,14 @@ type ExpandableSheetProps = {
     children?: React.ReactNode;
     style?: StyleProp<ViewStyle>;
     disableExpand?: boolean;
+    visible?: boolean;
 };
 
 export default function ExpandableSheet({
     children,
     style,
     disableExpand = false,
+    visible = true,
 }: ExpandableSheetProps) {
     const theme = useTheme();
     const { height } = useWindowDimensions();
@@ -28,6 +30,7 @@ export default function ExpandableSheet({
     const SHEET_HEIGHT = height * 0.7;
     const COLLAPSED_Y = height * 0.45;
     const EXPANDED_Y = 0;
+    const HIDDEN_Y = SHEET_HEIGHT;
 
     const styles = StyleSheet.create({
         sheet: {
@@ -87,34 +90,49 @@ export default function ExpandableSheet({
     });
 
     const [translateY] = useState(
-        () => new Animated.Value(disableExpand ? COLLAPSED_Y + 100 : COLLAPSED_Y)
+        () => new Animated.Value(
+            visible
+                ? COLLAPSED_Y
+                : HIDDEN_Y
+        )
     );
 
-    // Slide the sheet into its initial collapsed position
+    /**
+     * Handle opening / closing the sheet.
+     *
+     * visible = true:
+     *      hidden -> collapsed
+     *
+     * visible = false:
+     *      collapsed/expanded -> hidden
+     */
     useEffect(() => {
-        if (!disableExpand) {
-            translateY.setValue(COLLAPSED_Y);
-            return;
-        }
-
         Animated.spring(translateY, {
-            toValue: COLLAPSED_Y,
+            toValue: visible
+                ? COLLAPSED_Y
+                : HIDDEN_Y,
             useNativeDriver: true,
-            damping: 15,
+            damping: 20,
             stiffness: 200,
             mass: 0.8,
         }).start();
-    }, [COLLAPSED_Y, disableExpand, translateY]);
-    
+    }, [
+        visible,
+        COLLAPSED_Y,
+        HIDDEN_Y,
+        translateY,
+    ]);
 
     const panResponder = useMemo(() => {
         let startY = COLLAPSED_Y;
 
         return PanResponder.create({
-            onStartShouldSetPanResponder: () => !disableExpand,
+            onStartShouldSetPanResponder: () => {
+                return visible && !disableExpand;
+            },
 
             onMoveShouldSetPanResponder: (_, gesture) => {
-                if (disableExpand) {
+                if (!visible || disableExpand) {
                     return false;
                 }
 
@@ -177,6 +195,7 @@ export default function ExpandableSheet({
         EXPANDED_Y,
         translateY,
         disableExpand,
+        visible,
     ]);
 
     return (

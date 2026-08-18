@@ -74,7 +74,18 @@ type UserRecord = {
     timestamp: string,
     latitude: number,
     longitude: number,
-    recorded: number
+    recorded: number,
+    stree: string | null,
+    street_number: string | null,
+    city: string | null,
+    region: string | null,
+    country: string | null,
+    timestamps: string[]
+}
+
+export type HistoryResponse = { 
+    current: UserRecord & {connected: boolean}, 
+    records: UserRecord[] 
 }
 
 type LocationStream = {
@@ -321,7 +332,7 @@ export const locationApi = {
             body: payload,
         }),
 
-    fetchHistory: (userId: number) => request<{ records: UserRecord[] }>('/location/history', {params: {
+    fetchHistory: (userId: number) => request<HistoryResponse>('/location/history', {params: {
         user_id: userId
     }}),
 };

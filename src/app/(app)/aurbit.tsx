@@ -2,10 +2,10 @@ import { ThemedView } from '@/components/themed-view';
 import Loader from '@/components/ui/loader';
 import Navigation from '@/components/ui/navigation';
 import { useEffect, useState } from 'react';
-import { StyleSheet, useColorScheme, Image, useWindowDimensions } from 'react-native';
+import { StyleSheet, useColorScheme, Image, useWindowDimensions, TouchableWithoutFeedback } from 'react-native';
 import MapView, { MapViewProps, Marker } from 'react-native-maps';
 import { locationApi } from '@/lib/api';
-import type { UserLocation } from '@/lib/api';
+import type { HistoryResponse, UserLocation } from '@/lib/api';
 import appLog from '@/lib/logger';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/components/themed-text';
@@ -18,9 +18,10 @@ export default function App() {
     const scheme = useColorScheme();
     const theme = useTheme();
     const mapTheme: MapViewProps["userInterfaceStyle"] = scheme === 'light' || scheme === 'dark' ? scheme : undefined;
-    const [isLoading, setIsLoading] = useState(false);
-    const [isFetchingHistory, setFetchingHistory] = useState(false);
-    const [userHistory, setUserHistory] = useState(false);
+    const [isLoading, setIsLoading] = useState(false); // for loader
+    const [isFetchingHistory, setFetchingHistory] = useState(false); // for data
+    const [userHistory, setUserHistory] = useState<null | HistoryResponse>(null); // for dispaly
+    const [showUserHisotry, setShowUserHistory] = useState(false);
     const [users, setUsers] = useState<UserLocation[]>([]);
     
     const { height } = useWindowDimensions();
@@ -135,61 +136,79 @@ export default function App() {
 
     const fetchUserHistory = async (user: UserLocation) => {
         setFetchingHistory(true);
+        setShowUserHistory(true);
+
         let response = await locationApi.fetchHistory(user.userid)
         if (response.err || !response.data) {
             appLog("location", `Unable to pull location history for ${user.user}`, response.err);
             return;
         }
-        
 
+        setUserHistory(response.data)
         setFetchingHistory(false);
-        setUserHistory(true);
     }
 
     return (
-        <ThemedView style={styles.page}>
-            <MapView userInterfaceStyle={mapTheme} style={styles.map}>
-                {users.map((user) => (
-                    <Marker onPress={() => { fetchUserHistory(user) }} style={styles.marker} key={user.userid} coordinate={{
-                        longitude: user.longitude,
-                        latitude: user.latitude
-                    }}>
-                        
-                        {user.image ? (
-                            <ThemedView style={[styles.markerContainer]}>
-                                <Image
-                                    source={{
-                                        uri: `data:image/jpeg;base64,${user.image}`,
-                                    }}
-                                    style={{
-                                        width: 50,
-                                        height: 50,
-                                        borderRadius: 55,
-                                        margin: 0,
-                                    }}
-                                />
-                            </ThemedView>
-                        ) : (
-                            <ThemedView style={[styles.markerContainer, {height: 50, width: 50}]}>
-                                <ThemedText>{user.user.trim().split(/\s+/).map(n => n[0]).slice(0, 2).join("").toUpperCase()}</ThemedText>
-                            </ThemedView>
-                        )}
-                    </Marker>
-                ))}
-            </MapView>
-            <Navigation></Navigation>
-            {(isFetchingHistory || userHistory) && (
-            <ExpandableSheet disableExpand={isFetchingHistory} style={{justifyContent: "center"}}>
+        
+        <ThemedView>
+            <TouchableWithoutFeedback onPress={() => setShowUserHistory(false)}>
+                <ThemedView style={styles.page}>
+                    <MapView userInterfaceStyle={mapTheme} style={styles.map}>
+                        {users.map((user) => (
+                            <Marker onPress={() => { fetchUserHistory(user) }} style={styles.marker} key={user.userid} coordinate={{
+                                longitude: user.longitude,
+                                latitude: user.latitude
+                            }}>
+                                
+                                {user.image ? (
+                                    <ThemedView style={[styles.markerContainer]}>
+                                        <Image
+                                            source={{
+                                                uri: `data:image/jpeg;base64,${user.image}`,
+                                            }}
+                                            style={{
+                                                width: 50,
+                                                height: 50,
+                                                borderRadius: 55,
+                                                margin: 0,
+                                            }}
+                                        />
+                                    </ThemedView>
+                                ) : (
+                                    <ThemedView style={[styles.markerContainer, {height: 50, width: 50}]}>
+                                        <ThemedText>{user.user.trim().split(/\s+/).map(n => n[0]).slice(0, 2).join("").toUpperCase()}</ThemedText>
+                                    </ThemedView>
+                                )}
+                            </Marker>
+                        ))}
+                    </MapView>
+                    <Navigation></Navigation>
+                    
+                    
+                    
+                </ThemedView>
+            </TouchableWithoutFeedback>
+
+            <ExpandableSheet visible={showUserHisotry} disableExpand={isFetchingHistory} style={{ justifyContent: "center" }}>
                 {isFetchingHistory && (
-                    <ThemedView style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center"}}>
+                    <ThemedView
+                        style={{
+                            width: "100%",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                        }}
+                    >
                         <LogoAnimation height={45} width={45} />
                     </ThemedView>
                 )}
+
+                {userHistory && (
+                    <ThemedView></ThemedView>
+                )}
             </ExpandableSheet>
-            )}
-            
-            
         </ThemedView>
+
     );
 }
 
