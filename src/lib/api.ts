@@ -68,6 +68,15 @@ export type UserDetails = {
     image: string | null;
 }
 
+type UserRecord = {
+    id: number,
+    user_id: number,
+    timestamp: string,
+    latitude: number,
+    longitude: number,
+    recorded: number
+}
+
 type LocationStream = {
     close: () => void;
 };
@@ -273,7 +282,6 @@ export const usersApi = {
             }
         }
 
-        console.log(form)
         form.append('data', JSON.stringify(details));
 
         return request<unknown>('/users/edit-details', {
@@ -307,11 +315,15 @@ export const locationApi = {
         return openWebSocketStream('/location/', onUpdate, onError);
     },
 
-    update: (payload: { longitude: number; latitude: number; speed?: number | null }) =>
+    update: (payload: { longitude: number; latitude: number; speed?: number | null, street: string | null, street_number: string | null, city: string | null, region: string | null, country: string | null }) =>
         request('/location/update', {
             method: 'POST',
             body: payload,
         }),
+
+    fetchHistory: (userId: number) => request<{ records: UserRecord[] }>('/location/history', {params: {
+        user_id: userId
+    }}),
 };
 
 export default {

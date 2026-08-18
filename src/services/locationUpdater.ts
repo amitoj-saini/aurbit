@@ -11,10 +11,20 @@ let locationUpdaterInitialized = false;
 
 async function updateLocation(location: Location.LocationObject) {
     try {
+        const [address] = await Location.reverseGeocodeAsync({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+        })
+
         const response = await locationApi.update({
             longitude: location.coords.longitude,
             latitude: location.coords.latitude,
             speed: location.coords.speed || null,
+            street: address.street,
+            street_number: address.streetNumber,
+            city: address.city,
+            region: address.region,
+            country: address.country
         });
 
         await appLog("location", "Location Update response:", response.err || response.data);

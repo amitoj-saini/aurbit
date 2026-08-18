@@ -2,21 +2,28 @@ import { ThemedView } from '@/components/themed-view';
 import Loader from '@/components/ui/loader';
 import Navigation from '@/components/ui/navigation';
 import { useEffect, useState } from 'react';
-import { StyleSheet, useColorScheme, Image } from 'react-native';
+import { StyleSheet, useColorScheme, Image, useWindowDimensions } from 'react-native';
 import MapView, { MapViewProps, Marker } from 'react-native-maps';
 import { locationApi } from '@/lib/api';
 import type { UserLocation } from '@/lib/api';
 import appLog from '@/lib/logger';
 import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/components/themed-text';
+import ExpandableSheet from '@/components/ui/expandableSheet';
+import { LogoAnimation } from '@/components/ui/logo';
+
 
 export default function App() {
+    // TODO: do not refresh user history on click, allow for closing history tab on outside click, refresh tab on location broadcast
     const scheme = useColorScheme();
     const theme = useTheme();
     const mapTheme: MapViewProps["userInterfaceStyle"] = scheme === 'light' || scheme === 'dark' ? scheme : undefined;
     const [isLoading, setIsLoading] = useState(false);
+    const [isFetchingHistory, setFetchingHistory] = useState(false);
+    const [userHistory, setUserHistory] = useState(false);
     const [users, setUsers] = useState<UserLocation[]>([]);
     
+    const { height } = useWindowDimensions();
 
     const styles = StyleSheet.create({
         page: {
@@ -40,7 +47,53 @@ export default function App() {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-        }
+        },
+        userHistory: {
+            position: "absolute",
+            backgroundColor: theme.background,
+
+            width: "100%",
+            height: height * 0.70,
+
+            bottom: 0,
+
+            borderTopStartRadius: 35,
+            borderTopEndRadius: 35,
+
+            boxShadow: theme.boxShadow,
+
+            // Start with roughly 25% of the screen visible
+            transform: [
+                {
+                    translateY: height * 0.45,
+                },
+            ],
+
+            zIndex: 100,
+        },
+
+        userHistoryHandle: {
+            width: 45,
+            height: 5,
+
+            alignSelf: "center",
+
+            marginTop: 10,
+            marginBottom: 10,
+
+            borderRadius: 5,
+
+            backgroundColor: theme.textSecondary,
+        },
+
+        userHistoryContent: {
+            flex: 1,
+        },
+
+        userHistoryScrollContent: {
+            paddingHorizontal: 20,
+            paddingBottom: 30,
+        },
     });
 
     useEffect(() => {
@@ -52,8 +105,6 @@ export default function App() {
             try {
                 connection = await locationApi.stream(
                     (users: UserLocation[]) => {
-                        appLog("location", "Fetched user locations", users);
-                        console.log(users)
                         setUsers(users);
                         setIsLoading(false);
                     },
@@ -81,12 +132,25 @@ export default function App() {
             <Loader></Loader>
         )
     }
-    
+
+    const fetchUserHistory = async (user: UserLocation) => {
+        setFetchingHistory(true);
+        let response = await locationApi.fetchHistory(user.userid)
+        if (response.err || !response.data) {
+            appLog("location", `Unable to pull location history for ${user.user}`, response.err);
+            return;
+        }
+        
+
+        setFetchingHistory(false);
+        setUserHistory(true);
+    }
+
     return (
         <ThemedView style={styles.page}>
             <MapView userInterfaceStyle={mapTheme} style={styles.map}>
                 {users.map((user) => (
-                    <Marker style={styles.marker} key={user.userid} coordinate={{
+                    <Marker onPress={() => { fetchUserHistory(user) }} style={styles.marker} key={user.userid} coordinate={{
                         longitude: user.longitude,
                         latitude: user.latitude
                     }}>
@@ -114,8 +178,18 @@ export default function App() {
                 ))}
             </MapView>
             <Navigation></Navigation>
-        </ThemedView>  
+            {(isFetchingHistory || userHistory) && (
+            <ExpandableSheet disableExpand={isFetchingHistory} style={{justifyContent: "center"}}>
+                {isFetchingHistory && (
+                    <ThemedView style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center"}}>
+                        <LogoAnimation height={45} width={45} />
+                    </ThemedView>
+                )}
+            </ExpandableSheet>
+            )}
+            
+            
+        </ThemedView>
     );
 }
-
 
