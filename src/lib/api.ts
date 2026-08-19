@@ -50,6 +50,11 @@ export type UserLocation = {
     longitude: number;
     latitude: number;
     speed: number;
+    street: string | null,
+    street_number: string | null,
+    city: string | null,
+    region: string | null,
+    country: string | null,
 };
 
 type RawUserLocation = {
@@ -75,7 +80,7 @@ type UserRecord = {
     latitude: number,
     longitude: number,
     recorded: number,
-    stree: string | null,
+    street: string | null,
     street_number: string | null,
     city: string | null,
     region: string | null,
@@ -84,7 +89,7 @@ type UserRecord = {
 }
 
 export type HistoryResponse = { 
-    current: UserRecord & {connected: boolean}, 
+    current: UserLocation & {connected: boolean}, 
     records: UserRecord[] 
 }
 
@@ -122,6 +127,7 @@ async function openWebSocketStream(
     path: string,
     onUpdate: (users: UserLocation[]) => void,
     onError?: (error: Error) => void,
+    onClose?: (event: { wasClean: boolean; code: number }) => void
 ): Promise<LocationStream> {
     const connectionDetails = await fetchAurbitConnectionDetails();
     const userAccessToken = await fetchAurbitAccessToken();
@@ -172,6 +178,8 @@ const socketConstructor = WebSocket as unknown as new (
     };
 
     socket.onclose = (event: { wasClean: boolean; code: number }) => {
+        onClose?.(event);
+        
         if (!event.wasClean) {
             onError?.(new Error(`WebSocket closed unexpectedly (${event.code}).`));
         }
@@ -322,8 +330,9 @@ export const locationApi = {
     stream: async (
         onUpdate: (users: UserLocation[]) => void,
         onError?: (error: Error) => void,
+        onClose?: (event: { wasClean: boolean; code: number }) => void,
     ): Promise<LocationStream> => {
-        return openWebSocketStream('/location/', onUpdate, onError);
+        return openWebSocketStream('/location/', onUpdate, onError, onClose);
     },
 
     update: (payload: { longitude: number; latitude: number; speed?: number | null, street: string | null, street_number: string | null, city: string | null, region: string | null, country: string | null }) =>

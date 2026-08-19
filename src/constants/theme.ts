@@ -37,8 +37,8 @@ export const Colors = {
     accentPrimary: '#00b6fe',
     accentSecondary: '#36d6fd',
     accentTertiary: '#1854fc',
-    success: '#18ca00',
-    fail: '#db1c1c',
+    success: '#34D399',
+    fail: '#F87171',
 
     boxShadow: '0 8px 24px rgba(30, 30, 30, 0.5), 0 1px 2px rgba(30, 30, 30, 0.4)'
   },

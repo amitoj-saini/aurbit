@@ -1,3 +1,52 @@
+import type { UserLocation } from '@/lib/api';
+
+export function timeAgo(timestamp: string | Date): string {
+    const date = new Date(`${timestamp}Z`);
+    const now = new Date();
+
+    const diffMs = now.getTime() - date.getTime();
+
+    const minutes = Math.floor(diffMs / (1000 * 60));
+
+    if (minutes <= 1) {
+        return "Now";
+    }
+
+    if (minutes < 60) {
+        return `${minutes}m ago`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+
+    if (hours < 24) {
+        return `${hours}h ago`;
+    }
+
+    const days = Math.floor(hours / 24);
+
+    if (days < 30) {
+        return `${days}d ago`;
+    }
+
+    const months = Math.floor(days / 30);
+
+    if (months < 12) {
+        return `${months}mo ago`;
+    }
+
+    const years = Math.floor(months / 12);
+
+    return `${years}y ago`;
+}
+
+export function formattedLocationName(user: UserLocation) {
+    let location = `${user.latitude}, ${user.longitude}`;
+    if (user.street_number && user.street) location = `${user.street_number} ${user.street}`
+    else if (user.city && user.region) location = `${user.city}, ${user.region}`
+    else if (user.region && user.country) location = `${user.region}, ${user.country}`
+    return location;
+}
+
 export function isValidUrl(value: string) {
     try {
         const parsed = new URL(value);
