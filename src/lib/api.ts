@@ -73,7 +73,7 @@ export type UserDetails = {
     image: string | null;
 }
 
-type UserRecord = {
+export type UserRecord = {
     id: number,
     user_id: number,
     timestamp: string,

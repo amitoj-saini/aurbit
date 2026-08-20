@@ -1,4 +1,20 @@
-import type { UserLocation } from '@/lib/api';
+import type { UserLocation, UserRecord } from '@/lib/api';
+
+export function timestampDifference(timestamp1: string, timestamp2: string): string {
+    return formatDuration(
+        Math.abs(
+            new Date(timestamp1).getTime() -
+            new Date(timestamp2).getTime()
+        )
+    );
+}
+
+export function humanReadable(timestamp: string) {
+    return new Date(`${timestamp}Z`).toLocaleString([], {
+        hour: "numeric",
+        minute: "2-digit",
+    });
+}
 
 export function timeAgo(timestamp: string | Date): string {
     const date = new Date(`${timestamp}Z`);
@@ -12,34 +28,37 @@ export function timeAgo(timestamp: string | Date): string {
         return "Now";
     }
 
-    if (minutes < 60) {
-        return `${minutes}m ago`;
-    }
-
-    const hours = Math.floor(minutes / 60);
-
-    if (hours < 24) {
-        return `${hours}h ago`;
-    }
-
-    const days = Math.floor(hours / 24);
-
-    if (days < 30) {
-        return `${days}d ago`;
-    }
-
-    const months = Math.floor(days / 30);
-
-    if (months < 12) {
-        return `${months}mo ago`;
-    }
-
-    const years = Math.floor(months / 12);
-
-    return `${years}y ago`;
+    return `${formatDuration(diffMs)} ago`
 }
 
-export function formattedLocationName(user: UserLocation) {
+export function formatDuration(diffMs: number): string {
+    const totalSeconds = Math.floor(Math.abs(diffMs) / 1000);
+
+    const totalMinutes = Math.floor(totalSeconds / 60);
+    const minutes = totalMinutes % 60;
+    const totalHours = Math.floor(totalMinutes / 60);
+
+    const hours = totalHours % 24;
+    const days = Math.floor(totalHours / 24);
+
+    if (days > 0) {
+        return `${days}d ${hours}h`;
+    }
+
+    if (totalHours > 0) {
+        return minutes > 0
+            ? `${totalHours}h ${minutes}m`
+            : `${totalHours}h`;
+    }
+
+    if (totalMinutes > 0) {
+        return `${totalMinutes}m`;
+    }
+
+    return `${totalSeconds}s`;
+}
+
+export function formattedLocationName(user: UserLocation | UserRecord) {
     let location = `${user.latitude}, ${user.longitude}`;
     if (user.street_number && user.street) location = `${user.street_number} ${user.street}`
     else if (user.city && user.region) location = `${user.city}, ${user.region}`

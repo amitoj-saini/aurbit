@@ -1,7 +1,7 @@
 import { ThemedView } from '@/components/themed-view';
 import Loader from '@/components/ui/loader';
 import Navigation from '@/components/ui/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, useColorScheme, Image, TouchableWithoutFeedback } from 'react-native';
 import MapView, { MapViewProps, Marker } from 'react-native-maps';
 import { locationApi } from '@/lib/api';
@@ -11,7 +11,9 @@ import { useTheme } from '@/hooks/use-theme';
 import { ThemedText } from '@/components/themed-text';
 import ExpandableSheet from '@/components/ui/expandableSheet';
 import { LogoAnimation } from '@/components/ui/logo';
-import { formattedLocationName, timeAgo } from '@/lib/functions';
+import { formattedLocationName, humanReadable, timeAgo, timestampDifference } from '@/lib/functions';
+import { MapPin } from 'lucide-react-native';
+import HorizontalLine from '@/components/ui/horizontalLine';
 
 export default function App() {
     const scheme = useColorScheme();
@@ -22,6 +24,16 @@ export default function App() {
     const [userHistory, setUserHistory] = useState<null | HistoryResponse & {user: UserLocation}>(null); // for dispaly
     const [showUserHisotry, setShowUserHistory] = useState(false);
     const [users, setUsers] = useState<UserLocation[]>([]);
+    const userHistoryRef = useRef<null | HistoryResponse & { user: UserLocation }>(null);
+    const showUserHistoryRef = useRef(false);
+
+    useEffect(() => {
+        userHistoryRef.current = userHistory;
+    }, [userHistory]);
+
+    useEffect(() => {
+        showUserHistoryRef.current = showUserHisotry;
+    }, [showUserHisotry]);
 
     const styles = StyleSheet.create({
         page: {
@@ -76,34 +88,73 @@ export default function App() {
             borderStyle: "solid",
             borderColor: theme.background,
             borderWidth: 2
+        },
+        historyListContainer: {
+            
+        },
+        historyRecord: {
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+        },
+        historyIcon: {
+            borderRadius: 50,
+            justifyContent: "center",
+            alignItems: "center",
+            display: 'flex',
+            width: 32,
+            height: 32,
+            padding: 10, 
+            backgroundColor: theme.accentTertiary,
+            marginHorizontal: 9
+        },
+        historyTextContainer: {
+            marginHorizontal: 4
+        },
+        historyRecordText: {
+            fontSize: 14,
+            margin: 0,
+            marginBottom: -2.5
+        },
+        historyRecordDetails: {
+            color: theme.textSecondary,
+            fontSize: 12,
+            marginTop: -2.5
         }
     });
 
-    const fetchUserHistory = async (user: UserLocation, refresh=false) => {
+    const fetchUserHistory = useCallback(async (user: UserLocation, refresh = false) => {
+        const activeHistory = userHistoryRef.current;
+        const shouldKeepOpen = showUserHistoryRef.current;
+
         // already open
-        if (!refresh && showUserHisotry && userHistory && userHistory.user.userid === user.userid) return;
+        if (!refresh && shouldKeepOpen && activeHistory && activeHistory.user.userid === user.userid) return;
 
         // reset user history
         setUserHistory(null);
-        
+        userHistoryRef.current = null;
+
         setFetchingHistory(true);
         setShowUserHistory(true);
 
-        let response = await locationApi.fetchHistory(user.userid)
+        const response = await locationApi.fetchHistory(user.userid);
         if (response.err || !response.data) {
             appLog("location", `Unable to pull location history for ${user.user}`, response.err);
+            setFetchingHistory(false);
             return;
         }
+
+        const nextUserHistory = { ...response.data, user };
         
-        setUserHistory({...response.data, "user": user})
+        userHistoryRef.current = nextUserHistory;
+        setUserHistory(nextUserHistory);
         setFetchingHistory(false);
-    }
+    }, []);
 
     useEffect(() => {
         let connection: { close: () => void } | null = null;
         let isMounted = true;
         let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
-
 
         async function aurbitConnectLocations() {
             setIsLoading(true);
@@ -113,7 +164,10 @@ export default function App() {
                     (users: UserLocation[]) => {
                         setUsers(users);
                         setIsLoading(false);
-                        if (userHistory) fetchUserHistory(userHistory.user, true);
+                        const currentHistory = userHistoryRef.current;
+                        if (currentHistory) {
+                            void fetchUserHistory(currentHistory.user, true);
+                        }
                     },
                     (error: Error) => {
                         appLog("location", "Location websocket error", error.message);
@@ -121,7 +175,7 @@ export default function App() {
                     },
                     (event: { wasClean: boolean; code: number }) => {
                         appLog("location", "Location websocket error", event.code);
-                        
+
                         reconnectTimeout = setTimeout(() => {
                             if (isMounted) {
                                 void aurbitConnectLocations();
@@ -146,7 +200,7 @@ export default function App() {
 
             connection?.close();
         };
-    }, []);
+    }, [fetchUserHistory]);
 
     // if is loading
     if (isLoading) {
@@ -238,6 +292,33 @@ export default function App() {
                             </ThemedView>
                             
                         </ThemedView>
+
+                        <HorizontalLine/>
+
+                        <ThemedView style={styles.historyListContainer}>
+                            {userHistory.records.map((record) => (
+                                <ThemedView style={styles.historyRecord} key={record.id}>
+                                    <ThemedView style={styles.historyIcon}>
+                                        <MapPin size={18} color={theme.text}></MapPin>
+                                    </ThemedView>
+                                    <ThemedView style={styles.historyTextContainer}>
+                                        <ThemedText style={styles.historyRecordText}>{formattedLocationName(record)}</ThemedText>
+                                        <ThemedText style={styles.historyRecordDetails}>
+                                            {humanReadable(record.timestamp)}
+                                            {record.recorded > 1 && record.timestamps.length > 1 && (
+                                                <>
+                                                    {" - "}
+                                                    {humanReadable(record.timestamps[record.timestamps.length - 1])}
+                                                    
+                                                </>
+                                            )}
+                                            
+                                        </ThemedText>
+                                    </ThemedView>
+                                </ThemedView>
+                            ))}
+                        </ThemedView>
+                        
                     </ThemedView>
                 )}
             </ExpandableSheet>
