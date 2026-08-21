@@ -85,11 +85,10 @@ export type UserRecord = {
     city: string | null,
     region: string | null,
     country: string | null,
-    timestamps: string[]
+    last_timestamp: string
 }
 
-export type HistoryResponse = { 
-    current: UserLocation & {connected: boolean}, 
+export type HistoryResponse = {
     records: UserRecord[] 
 }
 

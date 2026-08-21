@@ -1,19 +1,19 @@
-import { ThemedView } from '@/components/themed-view';
-import Loader from '@/components/ui/loader';
-import Navigation from '@/components/ui/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { formattedLocationName, humanReadable, formatSince, timeAgo } from '@/lib/functions';
 import { StyleSheet, useColorScheme, Image, TouchableWithoutFeedback } from 'react-native';
 import MapView, { MapViewProps, Marker } from 'react-native-maps';
-import { locationApi } from '@/lib/api';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { HistoryResponse, UserLocation } from '@/lib/api';
-import appLog from '@/lib/logger';
-import { useTheme } from '@/hooks/use-theme';
-import { ThemedText } from '@/components/themed-text';
 import ExpandableSheet from '@/components/ui/expandableSheet';
-import { LogoAnimation } from '@/components/ui/logo';
-import { formattedLocationName, humanReadable, timeAgo, timestampDifference } from '@/lib/functions';
-import { MapPin } from 'lucide-react-native';
 import HorizontalLine from '@/components/ui/horizontalLine';
+import { ThemedView } from '@/components/themed-view';
+import { ThemedText } from '@/components/themed-text';
+import { LogoAnimation } from '@/components/ui/logo';
+import Navigation from '@/components/ui/navigation';
+import { useTheme } from '@/hooks/use-theme';
+import { MapPin } from 'lucide-react-native';
+import Loader from '@/components/ui/loader';
+import { locationApi } from '@/lib/api';
+import appLog from '@/lib/logger';
 
 export default function App() {
     const scheme = useColorScheme();
@@ -21,7 +21,7 @@ export default function App() {
     const mapTheme: MapViewProps["userInterfaceStyle"] = scheme === 'light' || scheme === 'dark' ? scheme : undefined;
     const [isLoading, setIsLoading] = useState(false); // for loader
     const [isFetchingHistory, setFetchingHistory] = useState(false); // for data
-    const [userHistory, setUserHistory] = useState<null | HistoryResponse & {user: UserLocation}>(null); // for dispaly
+    const [userHistory, setUserHistory] = useState<null | HistoryResponse & { user: UserLocation }>(null); // for dispaly
     const [showUserHisotry, setShowUserHistory] = useState(false);
     const [users, setUsers] = useState<UserLocation[]>([]);
     const userHistoryRef = useRef<null | HistoryResponse & { user: UserLocation }>(null);
@@ -78,24 +78,25 @@ export default function App() {
             alignItems: 'center',
         },
         historyUserStatus: {
-            width: 13, 
+            width: 13,
             height: 13,
             padding: 2,
-            position: 'absolute', 
-            marginTop: 36, 
-            marginLeft: 32, 
+            position: 'absolute',
+            marginTop: 36,
+            marginLeft: 32,
             borderRadius: 50,
             borderStyle: "solid",
             borderColor: theme.background,
             borderWidth: 2
         },
         historyListContainer: {
-            
+
         },
         historyRecord: {
             display: "flex",
             flexDirection: "row",
             alignItems: "center",
+            marginBottom: 22
         },
         historyIcon: {
             borderRadius: 50,
@@ -104,7 +105,7 @@ export default function App() {
             display: 'flex',
             width: 32,
             height: 32,
-            padding: 10, 
+            padding: 10,
             backgroundColor: theme.accentTertiary,
             marginHorizontal: 9
         },
@@ -145,7 +146,6 @@ export default function App() {
         }
 
         const nextUserHistory = { ...response.data, user };
-        
         userHistoryRef.current = nextUserHistory;
         setUserHistory(nextUserHistory);
         setFetchingHistory(false);
@@ -210,7 +210,7 @@ export default function App() {
     }
 
     return (
-        
+
         <ThemedView>
             <TouchableWithoutFeedback onPress={() => setShowUserHistory(false)}>
                 <ThemedView style={styles.page}>
@@ -220,7 +220,7 @@ export default function App() {
                                 longitude: user.longitude,
                                 latitude: user.latitude
                             }}>
-                                
+
                                 {user.image ? (
                                     <ThemedView style={[styles.markerContainer]}>
                                         <Image
@@ -236,7 +236,7 @@ export default function App() {
                                         />
                                     </ThemedView>
                                 ) : (
-                                    <ThemedView style={[styles.markerContainer, {height: 50, width: 50}]}>
+                                    <ThemedView style={[styles.markerContainer, { height: 50, width: 50 }]}>
                                         <ThemedText>{user.user.trim().split(/\s+/).map(n => n[0]).slice(0, 2).join("").toUpperCase()}</ThemedText>
                                     </ThemedView>
                                 )}
@@ -244,9 +244,9 @@ export default function App() {
                         ))}
                     </MapView>
                     <Navigation></Navigation>
-                    
-                    
-                    
+
+
+
                 </ThemedView>
             </TouchableWithoutFeedback>
 
@@ -266,7 +266,7 @@ export default function App() {
 
                 {userHistory && (
                     <ThemedView style={styles.historyContainer}>
-                        <ThemedView style={{display: "flex", flexDirection: "row"}}>
+                        <ThemedView style={{ display: "flex", flexDirection: "row" }}>
                             <ThemedView style={[styles.historyImageContainer]}>
                                 <Image
                                     source={{
@@ -280,45 +280,58 @@ export default function App() {
                                     }}
                                 />
 
-                                <ThemedView style={[styles.historyUserStatus, {backgroundColor: userHistory.current.connected ? theme.success : theme.fail}]}></ThemedView>
+                                <ThemedView style={[styles.historyUserStatus,
+                                {
+                                    backgroundColor: userHistory.records[0] &&
+                                        timeAgo(userHistory.records[0].last_timestamp) / (1000 * 60 * 60) < 5 ? theme.success : theme.fail
+                                }]}
+                                ></ThemedView>
                             </ThemedView>
-                            <ThemedView style={{paddingLeft: 15, height: 50, display: "flex", justifyContent: "center"}}>
-                                <ThemedText style={{fontSize: 16}}>
+                            <ThemedView style={{ paddingLeft: 15, height: 50, display: "flex", justifyContent: "center" }}>
+                                <ThemedText style={{ marginBottom: -2, fontSize: 16 }}>
                                     {userHistory.user.user}
                                 </ThemedText>
-                                <ThemedText style={{fontWeight: 400, fontSize: 13, color: theme.textSecondary}}>
-                                    {formattedLocationName(userHistory.current)} • {timeAgo(userHistory.current.timestamp)}
+                                <ThemedText style={{ fontWeight: 400, fontSize: 13, color: theme.textSecondary }}>
+                                    {userHistory.records[0] && formattedLocationName(userHistory.records[0])}
                                 </ThemedText>
+                                <ThemedText style={{ marginTop: -5, fontWeight: 400, fontSize: 13, color: theme.textSecondary }}>
+                                    Since {formatSince(userHistory.records[0].timestamp)}
+                                </ThemedText>
+                                
                             </ThemedView>
-                            
+
                         </ThemedView>
 
-                        <HorizontalLine/>
+                        <HorizontalLine />
 
                         <ThemedView style={styles.historyListContainer}>
-                            {userHistory.records.map((record) => (
-                                <ThemedView style={styles.historyRecord} key={record.id}>
-                                    <ThemedView style={styles.historyIcon}>
-                                        <MapPin size={18} color={theme.text}></MapPin>
+                            {userHistory.records.map((record, index: number) => (
+                                
+                                <ThemedView key={record.id}>
+                                    <ThemedView style={styles.historyRecord}>
+                                        <ThemedView style={styles.historyIcon}>
+                                            <MapPin size={18} color={theme.text}></MapPin>
+                                        </ThemedView>
+                                        <ThemedView style={styles.historyTextContainer}>
+                                            <ThemedText style={styles.historyRecordText}>{formattedLocationName(record)}</ThemedText>
+                                            <ThemedText style={styles.historyRecordDetails}>
+                                                {humanReadable(record.timestamp)}
+                                                {record.recorded > 1 && (
+                                                    <>
+                                                        {" - "}
+                                                        {humanReadable(record.last_timestamp)}
+
+                                                    </>
+                                                )}
+
+                                            </ThemedText>
+                                        </ThemedView>
                                     </ThemedView>
-                                    <ThemedView style={styles.historyTextContainer}>
-                                        <ThemedText style={styles.historyRecordText}>{formattedLocationName(record)}</ThemedText>
-                                        <ThemedText style={styles.historyRecordDetails}>
-                                            {humanReadable(record.timestamp)}
-                                            {record.recorded > 1 && record.timestamps.length > 1 && (
-                                                <>
-                                                    {" - "}
-                                                    {humanReadable(record.timestamps[record.timestamps.length - 1])}
-                                                    
-                                                </>
-                                            )}
-                                            
-                                        </ThemedText>
-                                    </ThemedView>
+                                    {index !== (userHistory.records.length-1) && (<ThemedView style={{zIndex: 4, position: "absolute", marginTop: 40, left: 24.5, height: 29, borderLeftWidth: 1, borderStyle: "dashed", borderColor: theme.backgroundTertiary}}></ThemedView>)}
                                 </ThemedView>
                             ))}
                         </ThemedView>
-                        
+
                     </ThemedView>
                 )}
             </ExpandableSheet>

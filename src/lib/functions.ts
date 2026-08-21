@@ -1,5 +1,28 @@
 import type { UserLocation, UserRecord } from '@/lib/api';
 
+export function formatSince(timestamp: string | Date) {
+    const date = new Date(`${timestamp}Z`);
+    const now = new Date();
+
+    const isToday =
+        date.getFullYear() === now.getFullYear() &&
+        date.getMonth() === now.getMonth() &&
+        date.getDate() === now.getDate();
+
+    return isToday
+        ? `${date.toLocaleTimeString([], {
+              hour: "numeric",
+              minute: "2-digit",
+          })}`
+        : `${date.toLocaleDateString([], {
+              month: "short",
+              day: "numeric",
+          })}, ${date.toLocaleTimeString([], {
+              hour: "numeric",
+              minute: "2-digit",
+          })}`;
+}
+
 export function timestampDifference(timestamp1: string, timestamp2: string): string {
     return formatDuration(
         Math.abs(
@@ -16,7 +39,14 @@ export function humanReadable(timestamp: string) {
     });
 }
 
-export function timeAgo(timestamp: string | Date): string {
+export function timeAgo(timestamp: string | Date): number {
+    const date = new Date(`${timestamp}Z`);
+    const now = new Date();
+
+    return now.getTime() - date.getTime();
+}
+
+export function formattedTimeAgo(timestamp: string | Date): string {
     const date = new Date(`${timestamp}Z`);
     const now = new Date();
 
