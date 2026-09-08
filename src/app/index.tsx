@@ -19,7 +19,6 @@ export default function HomeScreen() {
             } else if (response.data.loggedin) {
                 router.replace('/aurbit');
             }
-
         }
 
         void aurbitPathIdentifier();

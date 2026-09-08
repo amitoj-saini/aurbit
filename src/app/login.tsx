@@ -12,11 +12,13 @@ import { storeAurbitAccessToken } from '@/lib/storage';
 import { router } from 'expo-router';
 import appLog from '@/lib/logger';
 import { initializeLocationUpdater } from '@/services/locationUpdater';
+import { useAuth } from '@/context/auth-context';
 
 // TODO: First time login/creation for users still required
 
 export default function InitializeScreen() {
     const theme = useTheme();
+    const { refreshUser } = useAuth();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const [errorMessage, setErrorMessage] = useState('');
 
@@ -74,7 +76,8 @@ export default function InitializeScreen() {
         }
 
         if (response.data?.access_token){
-            storeAurbitAccessToken(response.data?.access_token);
+            await storeAurbitAccessToken(response.data.access_token);
+            await refreshUser();
             appLog("auth", "Logged in user", {"email": email})
             initializeLocationUpdater();
             router.replace('/');

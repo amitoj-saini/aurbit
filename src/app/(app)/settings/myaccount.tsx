@@ -5,6 +5,7 @@ import Loader from '@/components/ui/loader';
 import Navigation from '@/components/ui/navigation';
 import { useTheme } from '@/hooks/use-theme';
 import { usersApi, UserDetails } from '@/lib/api';
+import { useAuth } from '@/context/auth-context';
 import appLog from '@/lib/logger';
 import { router } from 'expo-router';
 import { ChevronLeft, Pencil } from 'lucide-react-native';
@@ -25,7 +26,7 @@ import { File as ExpoFile } from 'expo-file-system';
 type SelectedImageFile = ExpoFile | globalThis.File;
 
 export default function MyAccount() {
-    const [isLoading, setIsLoading] = useState(false);
+    const { user, isLoading: authLoading, refreshUser } = useAuth();
     const theme = useTheme();
 
     const [accountDetails, setAccountDetails] =
@@ -43,41 +44,18 @@ export default function MyAccount() {
     const [selectedImageFile, setSelectedImageFile] =
         useState<SelectedImageFile | null>(null);
 
+    // Sync the editable form when the shared authenticated user changes.
     useEffect(() => {
-        const fetchUserDetails = async () => {
-            setIsLoading(true);
-
-            const response = await usersApi.userDetails();
-
-            if (response.err || !response.data) {
-                appLog(
-                    'auth',
-                    response.err
-                        ? response.err.message
-                        : 'User detail err'
-                );
-
-                setIsLoading(false);
-                return;
-            }
-
-            setAccountDetails(response.data);
-            setEditedDisplayName(
-                response.data.displayName ?? ''
-            );
-            setEditedEmail(response.data.email ?? '');
-
-            setSelectedImageUri(
-                response.data.image
-                    ? `data:image/jpeg;base64,${response.data.image}`
-                    : null
-            );
-
-            setIsLoading(false);
-        };
-
-        fetchUserDetails();
-    }, []);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setAccountDetails(user);
+        setEditedDisplayName(user?.displayName ?? '');
+        setEditedEmail(user?.email ?? '');
+        setSelectedImageUri(
+            user?.image
+                ? `data:image/jpeg;base64,${user.image}`
+                : null
+        );
+    }, [user]);
 
     const styles = StyleSheet.create({
         page: {
@@ -316,26 +294,7 @@ export default function MyAccount() {
 
             setSelectedImageFile(null);
 
-            const refreshed =
-                await usersApi.userDetails();
-
-            if (!refreshed.err && refreshed.data) {
-                setAccountDetails(refreshed.data);
-
-                setEditedDisplayName(
-                    refreshed.data.displayName ?? ''
-                );
-
-                setEditedEmail(
-                    refreshed.data.email ?? ''
-                );
-
-                setSelectedImageUri(
-                    refreshed.data.image
-                        ? `data:image/jpeg;base64,${refreshed.data.image}`
-                        : null
-                );
-            }
+            await refreshUser();
         } catch (e) {
             appLog(
                 'auth',
@@ -349,7 +308,7 @@ export default function MyAccount() {
         }
     };
 
-    if (isLoading || !accountDetails) {
+    if (authLoading || !accountDetails) {
         return <Loader />;
     }
 

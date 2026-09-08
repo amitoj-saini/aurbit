@@ -48,3 +48,11 @@ export async function deleteAurbitConnectionDetails() {
         throw new Error(`Unable to delete connection details: ${err}`);
     }
 }
+
+export async function deleteAurbitUserCredentials() {
+    try {
+        await SecureStore.deleteItemAsync(AURBIT_USER_ACCESS_TOKEN_STORAGE_KEY);
+    } catch (err) {
+        throw new Error(`Unable to delete credentials: ${err}`);
+    }
+}

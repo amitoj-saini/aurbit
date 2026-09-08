@@ -71,6 +71,7 @@ export type UserDetails = {
     email: string;
     displayName: string;
     image: string | null;
+    access: number;
 }
 
 export type UserRecord = {
@@ -275,7 +276,10 @@ export const usersApi = {
             method: 'POST',
             body: payload,
         }),
-
+    logout: () => 
+        request<ApiResult>('/users/logout', {
+            method: "POST"
+        }),
     userStatus: (payload: { email: string }) =>
         request<ApiResult<{ initialized: boolean }>>('/users/user-status', {
             method: 'POST',

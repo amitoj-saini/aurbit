@@ -315,15 +315,7 @@ export default function App() {
                                         <ThemedView style={styles.historyTextContainer}>
                                             <ThemedText style={styles.historyRecordText}>{formattedLocationName(record)}</ThemedText>
                                             <ThemedText style={styles.historyRecordDetails}>
-                                                {humanReadable(record.timestamp)}
-                                                {record.recorded > 1 && (
-                                                    <>
-                                                        {" - "}
-                                                        {humanReadable(record.last_timestamp)}
-
-                                                    </>
-                                                )}
-
+                                                {formatSince(record.timestamp)}
                                             </ThemedText>
                                         </ThemedView>
                                     </ThemedView>
